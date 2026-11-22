@@ -110,14 +110,14 @@ Mask B（后续层用）：
 
         <p>PixelCNN 的生成过程是逐像素进行的——从左上角开始，一个像素一个像素地往右下角推。虽然理论上很优雅，但实际速度非常慢：生成一张 256×256 的图像需要 65,536 次前向传播。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>模型</th><th>年份</th><th>架构核心</th><th>生成速度</th><th>备注</th></tr>
             <tr><td>PixelRNN</td><td>2016</td><td>LSTM 行级建模</td><td>极慢</td><td>开创性工作</td></tr>
             <tr><td>PixelCNN</td><td>2016</td><td>掩码卷积</td><td>慢</td><td>并行训练，串行生成</td></tr>
             <tr><td>Gated PixelCNN</td><td>2016</td><td>门控残差块</td><td>慢</td><td>质量大幅提升</td></tr>
             <tr><td>PixelCNN++</td><td>2017</td><td>离散 logistic 混合分布</td><td>慢</td><td>CIFAR-10 上 SOTA</td></tr>
             <tr><td>Image Transformer</td><td>2018</td><td>自注意力替代卷积</td><td>慢</td><td>Transformer 引入图像生成</td></tr>
-        </table>
+        </table></div>
 
         <h2>6.3 Transformer 解码器架构</h2>
 
@@ -165,7 +165,7 @@ Mask B（后续层用）：
 
         <p>这是一个在 2025-2026 年被反复讨论的话题。两种范式各有优劣：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>对比维度</th><th>自回归模型</th><th>扩散模型</th></tr>
             <tr><td>生成质量</td><td>高（尤其是文本领域统治级）</td><td>高（图像/视频领域当前最先进）</td></tr>
             <tr><td>生成速度</td><td>慢（串行解码，但 KV cache 优化后尚可）</td><td>慢（去噪步数多，但 sCM/蒸馏已大幅加速）</td></tr>
@@ -173,7 +173,7 @@ Mask B（后续层用）：
             <tr><td>似然计算</td><td>精确可计算（链式法则）</td><td>需要近似</td></tr>
             <tr><td>统一多模态</td><td>天然支持（文本+图像 token 化）</td><td>需要适配（潜空间不同）</td></tr>
             <tr><td>全局一致性</td><td>可能"头重脚轻"（前面 token 没生成好会影响后面）</td><td>天生全局（整图同步去噪）</td></tr>
-        </table>
+        </table></div>
 
         <p>实际选择取决于场景：做聊天机器人 → 自回归（GPT 系）；做文生图 → 扩散模型（SD 系）；做统一多模态理解和生成 → 自回归（Emu3 系）在 2026 年看起来更有优势。</p>
 

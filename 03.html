@@ -101,7 +101,7 @@ VAE:
             <li><strong>可生成新样本</strong>：训练完成后，可以直接从标准正态分布 N(0, I) 采样 z，然后解码生成全新样本</li>
         </ul>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>对比维度</th><th>Autoencoder (AE)</th><th>VAE</th></tr>
             <tr><td>编码器输出</td><td>单个向量 z</td><td>分布参数 (μ, σ)</td></tr>
             <tr><td>潜变量</td><td>确定性</td><td>随机采样</td></tr>
@@ -109,7 +109,7 @@ VAE:
             <tr><td>能否生成新样本</td><td>不能（随机 z 解码效果差）</td><td>能（从先验采样即可）</td></tr>
             <tr><td>损失函数</td><td>重建损失</td><td>重建损失 + KL 正则</td></tr>
             <tr><td>潜空间编辑</td><td>不支持</td><td>支持（语义插值）</td></tr>
-        </table>
+        </table></div>
 
         <h2>3.3 重参数化技巧（Reparameterization Trick）</h2>
 
@@ -209,13 +209,13 @@ GOOD: ε ~ N(0, I)              ← 从标准正态采样（随机性来自外�
             <li><strong>解码器</strong>：将去噪后的潜特征解码回高清图像</li>
         </ul>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>版本</th><th>VAE 压缩比</th><th>潜空间尺寸 (512输入)</th><th>特点</th></tr>
             <tr><td>SD 1.x / 2.x</td><td>48x (f=8)</td><td>64×64×4</td><td>标准 KL-VAE</td></tr>
             <tr><td>SDXL</td><td>48x (f=8)</td><td>64×64×4</td><td>改进的 VAE (更大的 decoder)</td></tr>
             <tr><td>SD 3 / FLUX</td><td>48x (f=8)</td><td>64×64×4</td><td>3通道潜空间 (非4通道)</td></tr>
             <tr><td>Emu3 (自回归)</td><td>16x (f=4)</td><td>128×128×4</td><td>更大尺寸以保留细节</td></tr>
-        </table>
+        </table></div>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>没有 VAE，扩散模型必须在 512×512×3 ≈ 78 万维的像素空间上做去噪——计算成本是不可接受的。VAE 将维度降到 64×64×4 ≈ 1.6 万维，降低了约 50 倍的计算量。所以，<strong>VAE 是现代文生图模型的"计算杠杆"</strong>。

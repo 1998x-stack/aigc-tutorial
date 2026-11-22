@@ -115,14 +115,14 @@
 
         <p>CFG 尺度 w 是最重要的推理超参数之一。它的选择直接影响生成质量：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>CFG 尺度</th><th>效果</th><th>典型应用场景</th></tr>
             <tr><td>w = 1.0</td><td>完全条件生成，prompt 相关性最低</td><td>参考基线，几乎不用</td></tr>
             <tr><td>w = 2.0 - 4.0</td><td>多样性高，prompt 关联较弱，但有意外惊喜</td><td>艺术创作、探索性生成</td></tr>
             <tr><td>w = 5.0 - 8.0</td><td>最常用的区间，好的 prompt 遵守度 + 合理多样性</td><td>默认配置（SD 默认 7.5）</td></tr>
             <tr><td>w = 9.0 - 12.0</td><td>强 prompt 遵守，但多样性降低，可能出现过饱和</td><td>需要严格遵循 prompt 的场景</td></tr>
             <tr><td>w = 15.0+</td><td>色彩过饱和、伪影、不自然</td><td>不推荐使用</td></tr>
-        </table>
+        </table></div>
 
         <p>不同版本 SD 对 CFG 尺度的敏感度不同。SD 1.5 的最佳 CFG 通常在 7.5 左右，SDXL 的最佳 CFG 在 5.0-7.0 之间，而 SD 3.0 和 FLUX 对 CFG 的敏感度更低，通常用较小的值即可获得良好的 prompt 遵守。</p>
 

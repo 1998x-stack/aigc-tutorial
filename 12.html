@@ -92,7 +92,7 @@
 
         <p>主流的采样求解器可以分为几大类：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>求解器</th><th>类型</th><th>推荐步数</th><th>随机性</th><th>特点</th></tr>
             <tr><td>DDIM</td><td>隐式欧拉</td><td>20-100</td><td>确定性</td><td>经典、稳定、可插值</td></tr>
             <tr><td>Euler</td><td>一阶显式</td><td>20-50</td><td>确定性</td><td>最简单的 ODE 求解器</td></tr>
@@ -102,7 +102,7 @@
             <tr><td>DPM++ SDE</td><td>二阶 + SDE</td><td>10-30</td><td>随机性</td><td>细节更丰富，但稍微慢一些</td></tr>
             <tr><td>DPMSolver++</td><td>数据预测多步</td><td>10-20</td><td>确定性</td><td>SDXL 推荐采样器</td></tr>
             <tr><td>LCM</td><td>蒸馏专用</td><td>1-4</td><td>确定性</td><td>极速推理，质量有限</td></tr>
-        </table>
+        </table></div>
 
         <p>DPM++ 系列求解器（特别是 DPM++ 2M 和 DPM++ SDE）是当前最主流的采样器。它们基于扩散模型的特殊结构设计了专门的 ODE 求解公式，比通用的 ODE 求解器（如 Euler、Heun）在相同步数下精度更高。</p>
 
@@ -136,14 +136,14 @@ for t in reversed(range(steps)):
 
         <p>步数和质量的关系是采样中最重要的权衡。我们可以用一张对比表来直观展示：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>步数</th><th>Euler</th><th>DPM++ 2M</th><th>DPM++ SDE</th><th>LCM</th></tr>
             <tr><td>1</td><td>❌ 完全不可用</td><td>❌ 不可用</td><td>❌ 不可用</td><td>✅ 可用但细节少</td></tr>
             <tr><td>4</td><td>❌ 严重噪声</td><td>⚠️ 能看但不精细</td><td>⚠️ 能看但不精细</td><td>✅ 质量尚可</td></tr>
             <tr><td>10</td><td>⚠️ 低质量</td><td>✅ 可接受质量</td><td>✅ 可接受质量</td><td>✅ 最优（蒸馏条件）</td></tr>
             <tr><td>20</td><td>⚠️ 中等</td><td>✅ 高质量</td><td>✅ 高质量</td><td>❌ 过拟合退化</td></tr>
             <tr><td>50</td><td>✅ 高质量</td><td>✅ 最佳质量</td><td>✅ 最佳质量</td><td>❌ 退化</td></tr>
-        </table>
+        </table></div>
 
         <p>从表中可以总结出几个实用规则：</p>
         <ul>
@@ -182,7 +182,7 @@ for t in reversed(range(steps)):
 
         <p>综合以上所有内容，我整理了一份适用于不同场景的采样参数选择指南：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>场景</th><th>采样器</th><th>步数</th><th>CFG</th><th>说明</th></tr>
             <tr><td>日常文生图（SDXL）</td><td>DPM++ 2M Karras</td><td>20</td><td>5-7</td><td>最佳质量/速度平衡</td></tr>
             <tr><td>日常文生图（SD 1.5）</td><td>DPM++ 2M Karras</td><td>30</td><td>7-8</td><td>SD 1.5 需要更多步数</td></tr>
@@ -191,7 +191,7 @@ for t in reversed(range(steps)):
             <tr><td>批量实验（高吞吐）</td><td>DPM++ 2M Karras</td><td>15</td><td>6-7</td><td>减少步数换取吞吐</td></tr>
             <tr><td>图像翻译 / img2img</td><td>Euler a</td><td>20-30</td><td>7-8</td><td>Euler a 的随机性适合编辑</td></tr>
             <tr><td>视频帧生成</td><td>DPM++ 2M</td><td>15-20</td><td>5-7</td><td>确定性保证帧间一致性</td></tr>
-        </table>
+        </table></div>
 
         <div class="highlight">
             <strong>🌟 最终建议：</strong>采样器的选择没有绝对正确的答案。我的建议是记住三组常用配置：<strong>高质量</strong>（DPM++ 2M Karras 30步 CFG 7）、<strong>快速</strong>（DPM++ 2M Karras 15步 CFG 6）、<strong>极速</strong>（LCM 4步 CFG 1.5）。这三组配置覆盖了 90% 的日常需求。当遇到特定问题时，再根据本章的知识去调试具体的采样器参数。

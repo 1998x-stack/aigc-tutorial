@@ -133,12 +133,12 @@
 
         <p>关键细节：<strong>每轮迭代中 D 和 G 交替更新</strong>，一般 D 更新一次（或几次），G 更新一次。如果 D 太强，G 就永远学不会；如果 D 太弱，G 就得不到有效的梯度反馈。保持两者的平衡是 GAN 训练最大的艺术。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>阶段</th><th>D 的目标</th><th>G 的目标</th><th>理想结果</th></tr>
             <tr><td>训练初期</td><td>轻松区分真假</td><td>生成明显假图</td><td>D 准确率接近 100%</td></tr>
             <tr><td>训练中期</td><td>开始被迷惑</td><td>生成有意义的图</td><td>D 准确率在 60-80%</td></tr>
             <tr><td>收敛（理想）</td><td>完全无法区分</td><td>生成逼真图</td><td>D 准确率 = 50%</td></tr>
-        </table>
+        </table></div>
 
         <h2>4.4 理论证明：最优判别器与 JS 散度</h2>
 
@@ -172,12 +172,12 @@
 
         <p><strong>梯度消失（Vanishing Gradient）</strong>：当 D 太强时，D(G(z)) 始终接近 0，log(1 - D(G(z))) 的梯度趋近于零——G 得不到有效反馈，原地踏步。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>问题</th><th>现象</th><th>直观原因</th><th>经典缓解方案</th></tr>
             <tr><td>模式坍塌</td><td>生成样本多样性差</td><td>G 找到"捷径"骗过 D</td><td>Minibatch Discrimination, 谱归一化</td></tr>
             <tr><td>不收敛</td><td>损失震荡，质量波动</td><td>博弈双方交替更新，不保证收敛</td><td>WGAN, 梯度惩罚</td></tr>
             <tr><td>梯度消失</td><td>G 的 loss 不动</td><td>D 太强，log(1-D) 饱和</td><td>log D trick, LSGAN, WGAN</td></tr>
-        </table>
+        </table></div>
 
         <div class="warning">
             <strong>⚠️ 一个真实的踩坑故事：</strong>2018 年我花了一个月训练一个 GAN 来生成人脸头像。前两周一直在跟模式坍塌搏斗——生成器学到的全是"金发碧眼的白人女性"（可能是训练集中最多的模式），不管怎么调超参数都跑不出这一种。我试了 Minibatch Discrimination、特征匹配、标签平滑……能搜到的技巧都试了一遍。最后解决方式出乎意料：我把判别器加深了两层，同时给 G 增加了 dropout。这让我意识到，GAN 训练更像一个"实验艺术"——理论框架只能告诉你大致方向，具体配置全靠试错和直觉积累。那一个月后我养成了一个习惯：每次改 GAN 代码只改一个超参数，用 Weights & Biases 把所有实验记录下来。

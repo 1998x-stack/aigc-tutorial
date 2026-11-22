@@ -85,13 +85,13 @@
 
         <p>几乎所有生成模型都在玩这个公式：VAE 近似后验 P(z|x)，扩散模型学习 P(x_t | x_{t+1})，自回归模型分解 P(x) 为条件概率的连乘。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>概念</th><th>符号</th><th>在生成模型中的角色</th></tr>
             <tr><td>先验分布</td><td>P(z)</td><td>对潜变量的假设（如标准正态）</td></tr>
             <tr><td>似然</td><td>P(x|z)</td><td>解码器：从潜变量生成数据</td></tr>
             <tr><td>后验分布</td><td>P(z|x)</td><td>编码器：从数据推断潜变量</td></tr>
             <tr><td>证据/边际似然</td><td>P(x)</td><td>衡量模型对数据的拟合程度</td></tr>
-        </table>
+        </table></div>
 
         <h2>2.2 极大似然估计（MLE）</h2>
 
@@ -183,14 +183,14 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
 
         <p>本章看似抽象的概率理论，在后续章节中会反复出现：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>模型</th><th>用到的本章概念</th><th>具体角色</th></tr>
             <tr><td>VAE（第3章）</td><td>ELBO, KL散度, 变分推断</td><td>直接作为损失函数</td></tr>
             <tr><td>GAN（第4-5章）</td><td>JS散度, KL散度</td><td>最优判别器下生成器最小化JS散度</td></tr>
             <tr><td>扩散模型（第8章起）</td><td>MLE, KL散度</td><td>噪声预测损失的推导基于变分下界</td></tr>
             <tr><td>Flow Matching（第20章）</td><td>MLE, 连续概率流</td><td>通过回归损失最小化分布差异</td></tr>
             <tr><td>评估指标（第7章）</td><td>KL散度, 分布距离</td><td>FID计算特征分布间的距离</td></tr>
-        </table>
+        </table></div>
 
         <div class="warning">
             <strong>⚠️ 一个真实的踩坑故事：</strong>2022 年我在训练一个 VAE 变体时，KL 正则项的系数设得太大（β=10），结果所有生成结果都变成了"灰蒙蒙的一团"——模型为了趋近标准正态先验，完全放弃了重建质量。当时我对着 ELBO 公式想了半天才意识到，KL 正则的本质是一个"拉力"——拉力太强，模型就不敢偏离先验去拟合数据了。这个教训让我明白了"重建误差 vs KL 正则"的平衡有多重要，也让我对 ELBO 的理解从公式层面上升到了直觉层面。

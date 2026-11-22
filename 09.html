@@ -93,13 +93,13 @@
 
         <p>DDIM 的采样步数与质量的关系：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>采样器</th><th>步数</th><th>CIFAR-10 FID</th><th>确定性</th><th>潜空间插值</th></tr>
             <tr><td>DDPM</td><td>1000</td><td>3.17</td><td>否</td><td>不支持</td></tr>
             <tr><td>DDIM</td><td>100</td><td>4.04</td><td>是</td><td>支持</td></tr>
             <tr><td>DDIM</td><td>50</td><td>4.67</td><td>是</td><td>支持</td></tr>
             <tr><td>DDIM</td><td>10</td><td>13.36</td><td>是</td><td>支持</td></tr>
-        </table>
+        </table></div>
 
         <p>可以看到，DDIM 在 50-100 步时能保持与 DDPM 1000 步相当的质量，但速度提升了 10-20 倍。不过到了 10 步以下，DDIM 的质量也开始显著下降——这催生了后来的 DPMSolver 等更先进的 ODE 求解器方法（第 12 章详谈）。</p>
 
@@ -125,14 +125,14 @@
 
         <p>LDM 使用的感知压缩器有两种主要选择：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>特性</th><th>VQ-VAE</th><th>KL-VAE（LDM 所用）</th></tr>
             <tr><td>潜空间类型</td><td>离散的 codebook 索引</td><td>连续的高斯分布</td></tr>
             <tr><td>正则化</td><td>矢量量化（VQ）</td><td>KL 散度（让潜变量接近 N(0,I)）</td></tr>
             <tr><td>压缩效果</td><td>强压缩但可能导致信息丢失</td><td>温和压缩，保留了像素级细节</td></tr>
             <tr><td>下游兼容性</td><td>离散潜变量需要特殊处理</td><td>直接适配高斯扩散过程</td></tr>
             <tr><td>LDM 的选择</td><td>未采用</td><td>✅ 采用 KL-VAE 作为感知压缩器</td></tr>
-        </table>
+        </table></div>
 
         <p>为什么 LDM 选择 KL-VAE 而非 VQ-VAE？原因很简单：扩散模型天然假设潜变量服从高斯分布——VQ-VAE 的离散潜变量与扩散模型的连续噪声建模之间存在不匹配。而 KL-VAE 的连续潜变量正好与扩散过程"门当户对"。</p>
 

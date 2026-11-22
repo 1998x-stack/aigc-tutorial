@@ -148,13 +148,13 @@ Conditional GAN:
             <li><strong>混合正则化（Mixing Regularization）</strong>：训练时使用不同的 w 向量生成同一张图的粗粒度和细粒度特征</li>
         </ul>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>版本</th><th>年份</th><th>核心改进</th><th>效果</th></tr>
             <tr><td>StyleGAN</td><td>2019</td><td>映射网络 + AdaIN + 噪声注入</td><td>FID 首次突破 5</td></tr>
             <tr><td>StyleGAN2</td><td>2020</td><td>去除 AdaIN 中的伪影，改进归一化</td><td>消除水滴伪影，更自然</td></tr>
             <tr><td>StyleGAN3</td><td>2021</td><td>等变表示（equivariant），消除纹理粘连</td><td>精细细节不再"粘"在像素坐标上</td></tr>
             <tr><td>StyleGAN-XL</td><td>2022</td><td>大规模 + 分类器指导</td><td>ImageNet 上达到扩散模型水平</td></tr>
-        </table>
+        </table></div>
 
         <h2>5.5 BigGAN 与大规模 GAN 训练</h2>
 
@@ -175,7 +175,7 @@ Conditional GAN:
 
         <p>站在 2026 年回看，GAN 的巅峰是 2019-2021 年（StyleGAN2/BigGAN 时代）。2022 年 Stable Diffusion 开源后，扩散模型迅速取代 GAN 成为图像生成的主流范式。原因不是 GAN 不好，而是扩散模型在几个关键维度上更优：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>对比维度</th><th>GAN</th><th>扩散模型</th></tr>
             <tr><td>训练稳定性</td><td>差（需要大量调参技巧）</td><td>好（简单的 L2 损失）</td></tr>
             <tr><td>模式覆盖（多样性）</td><td>易模式坍塌</td><td>覆盖完整数据分布</td></tr>
@@ -184,7 +184,7 @@ Conditional GAN:
             <tr><td>潜空间可编辑性</td><td>强（StyleGAN 的 w 空间是宝库）</td><td>强（但需要 inversion 技巧）</td></tr>
             <tr><td>条件控制灵活性</td><td>弱（难以注入复杂文本）</td><td>强（CLIP 嵌入天然适配）</td></tr>
             <tr><td>训练成本</td><td>较低</td><td>较高</td></tr>
-        </table>
+        </table></div>
 
         <p>GAN 在 2026 年仍然活跃在以下场景：</p>
         <ul>
