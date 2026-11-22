@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,34 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第18章 质量调优与Debug</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第18章 质量调优与Debug</h1>
 
         <p>大家好，我是你们的讲师。这是 AIGC 核心机制部分的最后一章，但我们讨论的不是新的模型架构，而是一个可能更关键的话题——<strong>当模型跑起来了，生成的东西却乱七八糟，你该怎么办？</strong></p>
 
         <p>在实际项目中，把模型训练起来只需要几天，但把生成质量从"能用"调到"惊艳"往往需要几周甚至几个月。我在 AIGC 领域工作三年多，见过太多"训练损失完美下降、生成图片却惨不忍睹"的案例。这一章，我们把常见失败模式、微调策略、人类偏好对齐、A/B 评测和系统化 Debug 流程系统性地梳理一遍，最后用一个真实的踩坑案例来展示完整的排查过程。</p>
 
-        <h3>18.1 扩散模型的常见失败模式</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f18t f18d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f18t">从失败模式到修复手段的流程</title>
+        <desc id="f18d">先定位失败模式属于哪一类，再区分是数据、提示词、采样参数还是模型能力问题，最后选择微调、对齐或换参数等对应手段。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="25" y="70" width="150" height="60" rx="12" fill="#fee2e2"/><text x="100" y="95">观察到失败</text><text x="100" y="114" font-size="11" fill="#7f1d1d">肢体/过饱和/不遵循</text>
+            <rect x="220" y="70" width="150" height="60" rx="12" fill="#fef9c3"/><text x="295" y="95">归因分类</text><text x="295" y="114" font-size="11" fill="#a16207">数据/提示/参数/能力</text>
+            <rect x="415" y="30" width="170" height="60" rx="12" fill="#e0f2fe"/><text x="500" y="55">LoRA 微调</text><text x="500" y="74" font-size="11" fill="#0369a1">注入新概念/风格</text>
+            <rect x="415" y="110" width="170" height="60" rx="12" fill="#dcfce7"/><text x="500" y="135">DPO / 偏好对齐</text><text x="500" y="154" font-size="11" fill="#15803d">拉近人类偏好</text>
+            <rect x="630" y="70" width="165" height="60" rx="12" fill="#ede9fe"/><text x="712" y="95">调采样参数</text><text x="712" y="114" font-size="11" fill="#6d28d9">步数/CFG/调度器</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" fill="none" marker-end="url(#a18)"><path d="M175 100 H215"/><path d="M370 95 C 395 80 395 65 410 62"/><path d="M370 105 C 395 120 395 135 410 138"/><path d="M585 60 C 610 70 610 95 625 98"/><path d="M585 140 C 610 130 610 105 625 102"/></g>
+        <defs><marker id="a18" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="24" font-size="12" fill="#334155" text-anchor="middle">先归因，再对症：不是所有“画不好”都需要重新训练模型</text>
+    </svg>
+    <figcaption>系统化 Debug 的核心是先归因再动手：数据问题加数据，提示词问题改提示词，模型能力问题才考虑 LoRA 微调或偏好对齐。盲目调参往往只是把问题掩盖了。</figcaption>
+</figure>
+
+<h2>18.1 扩散模型的常见失败模式</h2>
 
         <p>不管是用 SD、FLUX 还是 DiT，生成质量出问题时，失败模式其实是有规律可循的：</p>
 
@@ -67,7 +87,7 @@
             <strong>🌟 一个重要的经验法则：</strong>"如果某件事对 AI 来说很容易，对人类来说往往很难，反之亦然。"对人类来说，画好手很难，但 AI 更难——因为手的关节自由度极高，且训练数据中手部往往占据了很小的像素区域，但语义信息密度极高。了解模型擅长什么、不擅长什么，是高效调试的第一步。
         </div>
 
-        <h3>18.2 模型微调策略</h3>
+        <h2>18.2 模型微调策略</h2>
 
         <p>当基础模型无法满足特定场景的质量要求时，我们需要对模型进行微调。当前主流的微调方法有三种：</p>
 
@@ -89,7 +109,7 @@
             <strong>💡 实战建议：</strong>如果需要微调，我建议的路线是：先用 Textual Inversion 快速验证概念的可学习性，然后用 LoRA 做正式的风格/角色微调。只有在 LoRA 效果不够好时，才考虑 DreamBooth 全量微调。这个流程可以节省大量试错时间。另外，LoRA 的 rank 选择很关键——对于简单风格（如水彩、素描），rank=16 就足够了；对于复杂概念（如特定人脸、复杂物品），建议 rank=64 到 128。
         </div>
 
-        <h3>18.3 人类偏好对齐：DPO 在扩散模型中的应用</h3>
+        <h2>18.3 人类偏好对齐：DPO 在扩散模型中的应用</h2>
 
         <p>2024 年，<strong>DPO</strong>（Direct Preference Optimization，直接偏好优化）被引入扩散模型领域。DPO 原本是为 LLM 的对齐训练设计的，但它巧妙地适配到了扩散模型的场景中。</p>
 
@@ -119,7 +139,7 @@ def dpo_loss(
 
         <p>DPO 在扩散模型上的应用效果令人印象深刻。HPS v2（Human Preference Score v2）数据集上的实验表明，经过 DPO 微调的 Stable Diffusion XL，在人类偏好评估中的胜率从 50% 提升到了 68%——这是一个巨大的提升。到 2026 年，DPO 已经成为扩散模型质量调优的标准组件，几乎所有发布的主流模型都会包含 DPO 对齐的版本。</p>
 
-        <h3>18.4 A/B 评测方法论</h3>
+        <h2>18.4 A/B 评测方法论</h2>
 
         <p>做质量调优的一个重要原则是：<strong>没有评测就没有优化</strong>。但生成模型的评测尤其困难——因为"好"和"差"是主观的。</p>
 
@@ -144,7 +164,7 @@ def dpo_loss(
             <strong>🌟 评测迭代工作流：</strong>我用得最顺手的流程是三轮过滤——第一轮用 CLIP Score 和 FID 做自动筛除（去掉明显差的版本），第二轮用 HPS v2/DINO 等模型做 pairwise 排序（选出 top-5），第三轮做人工盲测 ELO 对比（确定最终赢家）。三轮下来，10 个候选版本通常能在 2-3 天内完成评测。
         </div>
 
-        <h3>18.5 系统化 Debug 流程</h3>
+        <h2>18.5 系统化 Debug 流程</h2>
 
         <p>当生成质量出现问题时，最重要的不是"猜"原因，而是<strong>系统化地隔离和排查</strong>。以下是我总结的 Debug 流程：</p>
 
@@ -192,18 +212,24 @@ print(f"Captured {len(intermediates)} intermediate outputs")
             <strong>最终建议：永远不要只相信 loss 曲线；永远要肉眼验证生成结果。</strong>
         </div>
 
-        <h3>18.6 从质量调优到架构理解</h3>
+        <h2>18.6 从质量调优到架构理解</h2>
 
         <p>如果说质量调优是"把已有的模型调得更好"，那么下一部分我们要做的事情是"理解下一代模型的架构创新"。从第 19 章开始，我们将进入 FLUX 和 SD3 的 MM-DiT（Multi-Modal DiT）架构、Flow Matching 整流流理论、以及可控生成的最新实战技术。</p>
 
         <p>到此为止的 18 章，我们已经完整覆盖了 AIGC 的理论基础（VAE、GAN、扩散、自回归）、核心机制（CLIP、Cross-Attention、ControlNet、条件注入）、以及工程实践（分布式训练、量化、质量调优）。从下一章开始，我们将站在这些知识的基础上，去理解和实践 AIGC 领域最前沿的技术——这是整个课程中最令人兴奋的部分。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Hu et al., <em>LoRA: Low-Rank Adaptation of Large Language Models</em>, 2021. <a href="https://arxiv.org/abs/2106.09685">arXiv:2106.09685</a></li>
+    <li>Wallace et al., <em>Diffusion Model Alignment Using Direct Preference Optimization</em>, 2023（Diffusion-DPO）. <a href="https://arxiv.org/abs/2311.12908">arXiv:2311.12908</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="17.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="19.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

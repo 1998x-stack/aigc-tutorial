@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,31 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第17章 分布式训练与推理</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第17章 分布式训练与推理</h1>
 
         <p>大家好，我是你们的讲师。在 AIGC 的世界里，模型参数量正在以近乎疯狂的速度增长：2022 年的 Stable Diffusion 1.4 只有约 0.86B 参数，2023 年的 SDXL 涨到了 2.6B，2024 年的 FLUX.1 达到了 12B，而 2025 年的自回归统一模型参数量动辄几十 B 甚至上百 B。更不用说视频生成模型——处理时空维度的数据，显存消耗是图像模型的数十倍。</p>
 
         <p>面对这样的规模，单卡训练和推理已经成为历史。这一章，我们聚焦于生成模型<strong>训练和推理的工程挑战</strong>——FSDP 如何让超大模型训练成为可能？PipeFusion 如何用流水线并行推理 DiT？Flash Attention 和模型量化如何让每秒生成更多图像？这些工程优化，决定了你的模型是只能在实验室跑 demo，还是能真正部署到生产环境服务百万用户。</p>
 
-        <h3>17.1 生成模型的显存挑战</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f17t f17d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f17t">三种降低显存与算力压力的手段</title>
+        <desc id="f17d">FSDP 把参数、梯度和优化器状态分片到多张卡；Flash Attention 降低注意力的显存占用；量化把权重位宽降低以减少存储与带宽。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="30" y="55" width="220" height="90" rx="12" fill="#ede9fe"/><text x="140" y="82">FSDP 全分片</text><text x="140" y="104" font-size="11" fill="#6d28d9">参数/梯度/优化器</text><text x="140" y="122" font-size="11" fill="#6d28d9">按卡分片，用时聚合</text>
+            <rect x="300" y="55" width="220" height="90" rx="12" fill="#e0f2fe"/><text x="410" y="82">Flash Attention</text><text x="410" y="104" font-size="11" fill="#0369a1">分块计算注意力</text><text x="410" y="122" font-size="11" fill="#0369a1">不显式存 N² 矩阵</text>
+            <rect x="570" y="55" width="220" height="90" rx="12" fill="#dcfce7"/><text x="680" y="82">量化</text><text x="680" y="104" font-size="11" fill="#15803d">FP16/BF16/INT8</text><text x="680" y="122" font-size="11" fill="#15803d">降低存储与带宽</text>
+        </g>
+        <text x="410" y="34" font-size="12" fill="#334155" text-anchor="middle">显存瓶颈通常来自三个方向：参数与优化器状态、注意力中间激活、权重位宽</text>
+        <text x="410" y="180" font-size="11" fill="#7f1d1d" text-anchor="middle">教学示意：具体节省比例与模型规模、序列长度强相关，不同实现差异很大</text>
+    </svg>
+    <figcaption>三种手段解决不同层级的显存开销，工程上常组合使用：FSDP 解决训练期参数显存，Flash Attention 解决长序列激活，量化解决推理期带宽。</figcaption>
+</figure>
+
+<h2>17.1 生成模型的显存挑战</h2>
 
         <p>让我们先看清问题的规模。以 Diffusion Transformer 为例，训练过程中显存的消耗主要由以下几部分组成：</p>
 
@@ -68,7 +85,7 @@
             <strong>🌟 核心洞察：</strong>传统分布式训练中，最简单的方案是 DDP（Distributed Data Parallel）——每张卡存一份完整的模型副本，前向 + 反向传播后 all-reduce 梯度。但 DDP 的问题是：<strong>每张卡都要存完整模型</strong>，单卡放不下的模型，DDP 也无能为力。这就需要更激进的显存节省策略——FSDP 就是答案。
         </div>
 
-        <h3>17.2 FSDP：全分片数据并行</h3>
+        <h2>17.2 FSDP：全分片数据并行</h2>
 
         <p><strong>FSDP</strong>（Fully Sharded Data Parallel，全分片数据并行）是 PyTorch 在 2023 年推出的分布式训练策略，它解决了 DDP 的"每卡存全量"问题。核心思想极度简单：<strong>把模型权重、梯度、优化器状态分片到所有 GPU 上，只在需要时才 gather</strong>。</p>
 
@@ -113,7 +130,7 @@ for batch in dataloader:
             <strong>💡 实战经验：</strong>用 FSDP 训练扩散模型时，有一个容易被忽视的细节——<strong>和 BN（BatchNorm）的冲突</strong>。在扩散模型的 U-Net 中，部分实现使用了 GroupNorm 或 BatchNorm。如果使用 BatchNorm，FSDP 的分片会导致 BN 统计信息的计算不准确。解决方案是：要么把 BN 替换为 GN（GroupNorm），要么在 FSDP 包装时排除 BN 层。SD 系列模型已经全部使用 GroupNorm，所以这个问题在新模型中不太常见。
         </div>
 
-        <h3>17.3 PipeFusion：DiT 的流水线并行推理</h3>
+        <h2>17.3 PipeFusion：DiT 的流水线并行推理</h2>
 
         <p>训练可以用 FSDP 解决，但推理呢？对于超大 DiT 模型（如 FLUX.1 的 12B 参数），即使是用 FP16 精度，单张 GPU 也无法完整加载模型进行推理。而推理阶段没有优化器状态和梯度，主要的显存瓶颈是<strong>模型权重 + KV cache</strong>。</p>
 
@@ -135,7 +152,7 @@ for batch in dataloader:
             <tr><td>PipeFusion</td><td>层间 + patch</td><td>DiT 推理</td><td>All-to-All</td></tr>
         </table>
 
-        <h3>17.4 Flash Attention</h3>
+        <h2>17.4 Flash Attention</h2>
 
         <p>如果说 FSDP 和 PipeFusion 是"横向扩展"（用更多 GPU 存更大模型），那么 <strong>Flash Attention</strong> 就是"纵向优化"（让单次计算更快、更省显存）。</p>
 
@@ -147,7 +164,7 @@ for batch in dataloader:
             <strong>🌟 量化的提升：</strong>Flash Attention 2 在不同配置下，训练速度提升约 2-4x，显存节省约 5-10x。对于 DiT-XL/2 的训练，使用 Flash Attention 可以将最大 batch size 从 32 提升到 128（在相同的显存预算下），大幅提高训练吞吐量。到了 2026 年，Flash Attention 几乎成为所有 Transformer 训练的默认配置——如果你还在手动实现注意力层，是时候升级了。
         </div>
 
-        <h3>17.5 模型量化</h3>
+        <h2>17.5 模型量化</h2>
 
         <p>除了分布式和算法优化，<strong>模型量化</strong>（Model Quantization）是另一个重要的加速手段。量化的核心思想：用更少 bit 来表示模型参数，从而减少显存占用和计算量。</p>
 
@@ -166,7 +183,7 @@ for batch in dataloader:
             <strong>教训：量化不是"一刀切"——理解模型不同部分对精度的敏感性，做针对性的混合精度量化，才是工程落地的最佳实践。</strong>
         </div>
 
-        <h3>17.6 推理加速框架</h3>
+        <h2>17.6 推理加速框架</h2>
 
         <p>除了量化，还有几个重要的推理加速工具值得了解：</p>
 
@@ -190,12 +207,19 @@ for batch in dataloader:
 
         <p>有了分布式训练和推理能力，我们终于可以把大模型"跑起来"了。但"跑起来"只是第一步——生成的结果质量如何？遇到肢体畸形、色彩偏移、多指缺指等问题要怎么系统性地解决？下一章，我们将进入质量调优的世界——从常见失败模式到 LoRA 微调，从 DPO 对齐到 A/B 评测，系统地学习如何把生成质量从"能用"提升到"惊艳"。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Dao et al., <em>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</em>, 2022. <a href="https://arxiv.org/abs/2205.14135">arXiv:2205.14135</a></li>
+    <li>Zhao et al., <em>PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel</em>, 2023. <a href="https://arxiv.org/abs/2304.11277">arXiv:2304.11277</a></li>
+    <li>Wang et al., <em>PipeFusion: Displaced Patch Pipeline Parallelism for Inference of Diffusion Transformer Models</em>, 2024. <a href="https://arxiv.org/abs/2405.14430">arXiv:2405.14430</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="16.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="18.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
