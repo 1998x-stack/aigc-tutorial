@@ -117,7 +117,7 @@ torch.onnx.export(
 
         <p>导出 TensorRT 引擎只是第一步。在整个推理管线中，还有多个可优化的环节：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>优化技术</th><th>效果（vs baseline）</th><th>实现复杂度</th><th>适用环节</th></tr>
             <tr><td>FP16 推理</td><td>2x 速度，-50% 显存</td><td>低（一行代码）</td><td>所有模型</td></tr>
             <tr><td>INT8 量化（PTQ）</td><td>3-4x 速度，-75% 显存</td><td>中（需校准数据集）</td><td>U-Net / VAE</td></tr>
@@ -126,7 +126,7 @@ torch.onnx.export(
             <tr><td>Scheduler 步数减少</td><td>速度与步数成反比</td><td>低（换 Scheduler）</td><td>去噪循环</td></tr>
             <tr><td>VAE 分块解码（tiling）</td><td>大幅降低显存峰值</td><td>低（参数开关）</td><td>大图生成</td></tr>
             <tr><td>连续批处理（vLLM）</td><td>吞吐量 3-10x</td><td>高（需框架支持）</td><td>LLM + 扩散混合场景</td></tr>
-        </table>
+        </table></div>
 
         <p>其中 <strong>Torch Compile</strong> 是 2024 年 PyTorch 2.x 引入的重磅特性。它在第一次推理时编译计算图，后续调用跳过 Python 解释器直接执行编译后的内核。在 SDXL 的 U-Net 上，实测可以节省 20-30% 的推理时间——零侵入，一行代码：</p>
 
@@ -267,14 +267,14 @@ async def process_queue(q: asyncio.Queue):
 
         <p>为了帮你选型，下表列出了 2025-2026 主流 GPU 在扩散模型推理中的实测性能数据（基于 SDXL 1.0，20 步 DPM++，1024×1024，batch=1 FP16）：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>GPU 型号</th><th>显存</th><th>单图延迟</th><th>吞吐量（batch=4）</th><th>INT8 加速比</th><th>典型场景</th></tr>
             <tr><td>A100 80G</td><td>80 GB</td><td>~1.8 s</td><td>~12 img/s</td><td>2.8x</td><td>生产集群、高并发服务</td></tr>
             <tr><td>L40 48G</td><td>48 GB</td><td>~1.5 s</td><td>~14 img/s</td><td>3.0x</td><td>主流云推理实例</td></tr>
             <tr><td>RTX 4090</td><td>24 GB</td><td>~2.2 s</td><td>~7 img/s</td><td>2.5x</td><td>个人工作站、中小团队</td></tr>
             <tr><td>RTX 5090</td><td>32 GB</td><td>~1.2 s</td><td>~18 img/s</td><td>3.2x</td><td>高性价比生产卡（2025+）</td></tr>
             <tr><td>RTX 4080</td><td>16 GB</td><td>~3.0 s</td><td>~5 img/s</td><td>2.2x</td><td>个人开发、实验</td></tr>
-        </table>
+        </table></div>
 
         <div class="tip">
             <strong>💡 选型建议：</strong>不要只看单图延迟——对于线上服务，<strong>吞吐量（img/s）</strong>比延迟更重要。RTX 5090 的单图延迟虽然比 A100 还低 33%，但在高并发场景下 A100 的 80 GB 显存允许更大的 batch size，总吞吐量可能反超。如果你需要服务 100+ QPS 的规模，A100/L40 集群仍是唯一选择；如果你的负载在 10-50 QPS 以内，RTX 5090 的性价比极高。

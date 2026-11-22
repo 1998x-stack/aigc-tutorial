@@ -111,13 +111,13 @@
 
         <p>同样的 Transformer，不同的任务只取决于你如何排列和掩码 token 序列。这正是"统一"二字的含义。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>范式</th><th>输入</th><th>预测目标</th><th>对应任务</th></tr>
             <tr><td>文生图</td><td>文本 token 序列</td><td>图像 token 序列</td><td>文生图、文生视频</td></tr>
             <tr><td>图生文</td><td>图像 token 序列</td><td>文本 token 序列</td><td>图像描述、VQA</td></tr>
             <tr><td>图文混合</td><td>部分图文 token</td><td>剩余 token</td><td>多模态理解</td></tr>
             <tr><td>视频预测</td><td>前 N 帧 token</td><td>后 M 帧 token</td><td>视频续帧、视频预测</td></tr>
-        </table>
+        </table></div>
 
         <div class="warning">
             <strong>⚠️ 一个真实的踩坑故事：</strong>我曾在 2025 年初尝试复现 Emu3 的视觉 tokenization 部分。结果卡了整整两周——生成的图像总是出现明显的"棋盘格伪影"（checkerboard artifacts）。深入排查后发现，问题出在 VQ-GAN 的 codebook collapse（大部分 codebook entry 未被使用）。解决方案是引入 codebook 的重新初始化机制（codebook reset）和承诺损失（commitment loss）的权重调优。这个经历让我深刻认识到：自回归统一模型的"概念"很美，但让视觉 tokenizer 稳定工作，本身就是一篇论文的工作量。
@@ -159,14 +159,14 @@ for batch in dataloader:
 
         <p>自回归统一模型的基石是<strong>离散 tokenization</strong>——把连续信号（图像像素、视频帧、音频波形）转换为离散整数序列。目前主流的方法是 VQ-VAE 和 VQ-GAN：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>方法</th><th>提出年份</th><th>编码器</th><th>量化方式</th><th>感知损失</th><th>GAN 判别器</th></tr>
             <tr><td>VQ-VAE</td><td>2017</td><td>CNN/ResNet</td><td>最近邻查找</td><td>无</td><td>无</td></tr>
             <tr><td>VQ-VAE-2</td><td>2019</td><td>层级式 CNN</td><td>层级最近邻</td><td>无</td><td>无</td></tr>
             <tr><td>VQ-GAN</td><td>2021</td><td>CNN/Transformer</td><td>最近邻查找</td><td>有 (LPIPS)</td><td>有</td></tr>
             <tr><td>ViT-VQGAN</td><td>2022</td><td>ViT</td><td>最近邻查找</td><td>有 (LPIPS)</td><td>有</td></tr>
             <tr><td>FSQ (免编码本)</td><td>2024</td><td>任意</td><td>四舍五入量化</td><td>可选</td><td>可选</td></tr>
-        </table>
+        </table></div>
 
         <p>从表中可以看到一个趋势：<strong>量化方法本身越来越简单</strong>（FSQ 甚至完全去掉了可学习的 codebook），但生成质量却越来越高。这背后的逻辑是：随着 Transformer backbone 规模的增大，它有能力自己"消化"粗糙量化带来的信息损失——关键在于 codebook size 和 embedding 维度的匹配。</p>
 
@@ -178,7 +178,7 @@ for batch in dataloader:
 
         <p>站在 2026 年中这个时间节点回望，自回归和扩散两条路线的竞争与融合已经非常清晰：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>对比维度</th><th>自回归模型</th><th>扩散模型</th></tr>
             <tr><td>生成速度</td><td>慢（串行逐 token）</td><td>中（数十步去噪，可加速）</td></tr>
             <tr><td>推理时延</td><td>随序列长度线性增长</td><td>固定步数，与分辨率弱相关</td></tr>
@@ -187,7 +187,7 @@ for batch in dataloader:
             <tr><td>训练稳定性</td><td>高（标准交叉熵）</td><td>中（需要噪声调度技巧）</td></tr>
             <tr><td>数学似然</td><td>可精确计算</td><td>只能近似（ELBO）</td></tr>
             <tr><td>编辑/控制灵活性</td><td>低（序列难以局部修改）</td><td>高（可通过 latent 操作精确控制）</td></tr>
-        </table>
+        </table></div>
 
         <p>目前可以看到的融合趋势包括：</p>
         <ul>

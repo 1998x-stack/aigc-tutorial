@@ -80,7 +80,7 @@
 
         <p>但 2024 年的"升级配方"完全不同了：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>维度</th><th>SDXL（2023）</th><th>SD3 / FLUX（2024）</th></tr>
             <tr><td>骨干网络</td><td>U-Net（CNN + Cross-Attention）</td><td>MM-DiT（纯 Transformer）</td></tr>
             <tr><td>文本编码器</td><td>CLIP-L / CLIP-G</td><td>CLIP-L + T5-XXL（双编码器）</td></tr>
@@ -88,7 +88,7 @@
             <tr><td>潜空间</td><td>VAE 4 通道</td><td>VAE 16 通道（SD3）/ 同 SDXL（FLUX）</td></tr>
             <tr><td>参数规模</td><td>~2.6B</td><td>8B（SD3）/ 12B（FLUX）</td></tr>
             <tr><td>推理步数</td><td>20-50 步</td><td>4-28 步（视调度器而定）</td></tr>
-        </table>
+        </table></div>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>这次架构升级的本质是"全面 Transformer 化"。不仅去噪网络从 CNN 换成了 Transformer，连文本编码器也从 CLIP（~1B 参数级别）换成了 T5-XXL（11B 参数）。"更大、更统一、更灵活"是 2024 年文生图模型的关键词。
@@ -166,11 +166,11 @@ def rectified_flow_loss(model, x_1, text_embed):
 
         <p>SD3 和 FLUX 都同时使用两个文本编码器：<strong>CLIP-L</strong>（用于粗粒度理解）和 <strong>T5-XXL</strong>（用于细粒度理解）。我们来对比一下：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>编码器</th><th>参数量</th><th>最大 token 长度</th><th>特点</th></tr>
             <tr><td>CLIP-L</td><td>~427M</td><td>77</td><td>图文对比训练，擅长风格和语义对齐</td></tr>
             <tr><td>T5-XXL</td><td>~11B</td><td>512</td><td>纯文本预训练，擅长理解长文本和复杂指令</td></tr>
-        </table>
+        </table></div>
 
         <p>T5-XXL 的加入带来了质的飞跃。在 SDXL 时代，模型经常忽略 prompt 中的细节——比如"红色背景上的白色字体"可能生成白底红字。因为 CLIP 只有 77 个 token 的限制，复杂描述会被截断。有了 T5-XXL 的 512 token 支持，模型可以"逐字读完"你的全部描述。</p>
 
@@ -180,7 +180,7 @@ def rectified_flow_loss(model, x_1, text_embed):
 
         <p>SD3 和 FLUX 虽然在核心技术路线上高度相似（MM-DiT + Rectified Flow + T5），但在架构细节、开源策略和社区生态上存在显著差异。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>对比维度</th><th>Stable Diffusion 3</th><th>FLUX.1</th></tr>
             <tr><td>研发团队</td><td>Stability AI</td><td>Black Forest Labs（原 Stability 核心成员）</td></tr>
             <tr><td>模型版本</td><td>SD3-Medium（~2.5B）<br>SD3-Large（~8B）</td><td>FLUX.1-dev（~12B, 开源）<br>FLUX.1-pro（闭源）<br>FLUX.1-schnell（蒸馏版, 4步）</td></tr>
@@ -189,7 +189,7 @@ def rectified_flow_loss(model, x_1, text_embed):
             <tr><td>社区生态</td><td>Diffusers 官方集成</td><td>ComfyUI 原生支持<br>社区 LoRA 极多</td></tr>
             <tr><td>生成质量</td><td>自然场景较好</td><td>字体/人手/构图更优</td></tr>
             <tr><td>推理速度（1024×1024）</td><td>~5 秒（Medium, 28步）</td><td>~3 秒（schnell, 4步）</td></tr>
-        </table>
+        </table></div>
 
         <p>从实际使用体感来看，FLUX.1-dev 在文字渲染、人手结构和复杂构图上略优于 SD3，这得益于更大的参数量和更好的训练数据。但 SD3 的 Medium 版本对显存更友好，而且有 Diffusers 的原生支持，集成更为方便。</p>
 

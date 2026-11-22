@@ -97,12 +97,12 @@
 
         <p>两个编码器各自输出一个特征向量，然后通过投影层映射到同一个<strong>多模态嵌入空间</strong>（Multimodal Embedding Space）。在这个空间中，语义相似的图文对的距离被最小化，语义无关的对的距离被最大化。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>组件</th><th>架构选择</th><th>输出维度</th><th>说明</th></tr>
             <tr><td>Image Encoder</td><td>ResNet-50 / ResNet-101 / ViT-L/14</td><td>512 / 768</td><td>ViT 版本在 zero-shot 分类中表现更优</td></tr>
             <tr><td>Text Encoder</td><td>12 层 Transformer</td><td>512 / 768</td><td>vocab size 49,152, max context length 76 tokens</td></tr>
             <tr><td>投影层</td><td>Linear projection</td><td>d (共同维度)</td><td>将两个模态映射到同一特征空间</td></tr>
-        </table>
+        </table></div>
 
         <p>训练时，一个 batch 包含 N 个图文对，可以得到 N×N 的相似度矩阵——对角线上的 N 个是正样本，其余 N²−N 个是负样本。这个矩阵就是对比损失的输入。</p>
 
@@ -173,14 +173,14 @@ loss = (loss_i + loss_t) / 2</code></pre>
 
         <p><strong>角色二：图像质量评估。</strong>CLIP Score 是最常用的生成质量自动评估指标之一。具体做法是计算生成图像和输入文本的 CLIP 特征余弦相似度——分数越高，说明图文一致性越好。虽然 CLIP Score 不能完全替代人工评测，但它是快速筛选和迭代的高效工具。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>应用场景</th><th>CLIP 的作用</th><th>代表性模型/工具</th></tr>
             <tr><td>文生图（T2I）</td><td>作为文本编码器注入 prompt 语义</td><td>Stable Diffusion 1.x/2.x/XL</td></tr>
             <tr><td>图生图（I2I）</td><td>用 CLIP 图像特征做风格/内容引导</td><td>Image Variation, IP-Adapter</td></tr>
             <tr><td>图像检索</td><td>跨模态特征匹配</td><td>CLIP-based retrieval systems</td></tr>
             <tr><td>质量评估</td><td>计算图文匹配度（CLIP Score）</td><td>CLIPScore, HPS v2</td></tr>
             <tr><td>零样本分类</td><td>不需要训练数据的自由形式分类</td><td>任何分类任务 prompt engineering</td></tr>
-        </table>
+        </table></div>
 
         <p>CLIP 之后，社区又陆续提出了改进版本。SigLIP 用 Sigmoid 损失替代 softmax 损失，让训练更加稳定，且对 batch size 不再那么敏感。OpenCLIP 和 DFN（Data Filtering Networks）则证明了<strong>数据质量比数据量更重要</strong>——经过精心筛选的 2 亿图文对可以超过原始 CLIP 的 4 亿对的效果。</p>
 

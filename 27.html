@@ -74,12 +74,12 @@
 
         <p>"实时"在不同场景下有不同的定义，但大致可以分为三个层级：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>场景</th><th>延迟要求</th><th>帧率要求</th><th>代表应用</th></tr>
             <tr><td>交互式 AI 创作</td><td>&lt; 500ms</td><td>NA（单张图）</td><td>Midjourney 实时笔刷、Adobe Firefly</td></tr>
             <tr><td>视频通话特效</td><td>&lt; 50ms</td><td>≥ 30fps</td><td>Zoom AI 背景、抖音特效</td></tr>
             <tr><td>游戏内生成</td><td>&lt; 16ms</td><td>≥ 60fps</td><td>实时材质生成、NPC 外观生成</td></tr>
-        </table>
+        </table></div>
 
         <p>传统的 50 步扩散模型连第一级都够呛——单张 512×512 图像在 RTX 4090 上需要 2-3 秒。要在消费级硬件上达到毫秒级的延迟，唯一的出路是<strong>大幅减少推理步数，甚至一步到位</strong>。</p>
 
@@ -164,7 +164,7 @@ for x0, cond in dataloader:
 
         <h2>27.6 一步生成模型对比</h2>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>模型/方法</th><th>推理步数</th><th>基座模型</th><th>核心机制</th><th>FID↓ (COCO 30k)</th><th>训练复杂度</th></tr>
             <tr><td>原始 SDXL</td><td>20-50</td><td>SDXL</td><td>标准扩散采样</td><td>23.5</td><td>-</td></tr>
             <tr><td>LCM-LoRA</td><td>2-4</td><td>SDXL</td><td>一致性蒸馏 + LoRA</td><td>27.1</td><td>低</td></tr>
@@ -172,7 +172,7 @@ for x0, cond in dataloader:
             <tr><td>sCM (OpenAI 2025)</td><td>1-2</td><td>DiT-XL/2</td><td>简化一致性模型</td><td>24.8</td><td>中</td></tr>
             <tr><td>ADD (SD 1.5)</td><td>1</td><td>SD 1.5</td><td>对抗 + 蒸馏</td><td>23.2</td><td>高</td></tr>
             <tr><td>FLUX.1-turbo</td><td>4</td><td>FLUX.1</td><td>rectified flow 蒸馏</td><td>21.6</td><td>高</td></tr>
-        </table>
+        </table></div>
 
         <p>从上表可以看到几个规律：</p>
         <ul>

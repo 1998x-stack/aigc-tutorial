@@ -73,7 +73,7 @@
 
         <p>不管是用 SD、FLUX 还是 DiT，生成质量出问题时，失败模式其实是有规律可循的：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>失败模式</th><th>典型表现</th><th>可能原因</th><th>常见程度</th></tr>
             <tr><td>肢体畸形</td><td>手臂扭曲、腿部数量不对、关节错位</td><td>模型对人体的先验知识不足、prompt 中姿态描述冲突</td><td>★★★★★</td></tr>
             <tr><td>多指/缺指</td><td>手指数量大于 5 或小于 5</td><td>生成模型中手的特征空间太小、去噪步数不足</td><td>★★★★★</td></tr>
@@ -81,7 +81,7 @@
             <tr><td>色彩偏移</td><td>整体色调偏绿/偏红、饱和度异常</td><td>VAE 解码器退化、CFG scale 过高</td><td>★★★☆☆</td></tr>
             <tr><td>重复纹理</td><td>背景出现周期性重复图案</td><td>注意力坍塌（Attention Collapse）、Patch 位置编码问题</td><td>★★★☆☆</td></tr>
             <tr><td>语义忽略</td><td>prompt 中的物体在生成图中缺失</td><td>文本特征注入不足、Cross-Attention 权重分配异常</td><td>★★★★☆</td></tr>
-        </table>
+        </table></div>
 
         <div class="highlight">
             <strong>🌟 一个重要的经验法则：</strong>"如果某件事对 AI 来说很容易，对人类来说往往很难，反之亦然。"对人类来说，画好手很难，但 AI 更难——因为手的关节自由度极高，且训练数据中手部往往占据了很小的像素区域，但语义信息密度极高。了解模型擅长什么、不擅长什么，是高效调试的第一步。
@@ -97,13 +97,13 @@
 
         <p><strong>Textual Inversion（文本反转）</strong>：这是最轻量级的方法——不修改模型权重，只学习新的 token embedding。具体来说，在 CLIP Text Encoder 的词表中插入一个新的 placeholder token（如 &lt;S&gt;），然后优化这个 token 的 embedding 向量，使其能代表某个特定概念。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>方法</th><th>训练参数量</th><th>所需图像数</th><th>训练时间</th><th>适用场景</th></tr>
             <tr><td>Textual Inversion</td><td>~1K (仅 embedding)</td><td>3-5 张</td><td>~10 分钟</td><td>特定物体/风格的 token 化</td></tr>
             <tr><td>LoRA</td><td>~3M-10M</td><td>10-50 张</td><td>~30 分钟</td><td>风格适配、角色一致性</td></tr>
             <tr><td>DreamBooth</td><td>全量 (0.8B-3B)</td><td>5-20 张</td><td>~2 小时</td><td>高保真个性化生成</td></tr>
             <tr><td>DreamBooth + LoRA</td><td>~10M</td><td>5-20 张</td><td>~30 分钟</td><td>兼顾质量和效率的折中方案</td></tr>
-        </table>
+        </table></div>
 
         <div class="tip">
             <strong>💡 实战建议：</strong>如果需要微调，我建议的路线是：先用 Textual Inversion 快速验证概念的可学习性，然后用 LoRA 做正式的风格/角色微调。只有在 LoRA 效果不够好时，才考虑 DreamBooth 全量微调。这个流程可以节省大量试错时间。另外，LoRA 的 rank 选择很关键——对于简单风格（如水彩、素描），rank=16 就足够了；对于复杂概念（如特定人脸、复杂物品），建议 rank=64 到 128。

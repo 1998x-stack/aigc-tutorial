@@ -75,12 +75,12 @@
 
         <p>Diffusers 库的设计哲学非常清晰：<strong>Pipeline 编排流程，Model 负责计算，Scheduler 控制步进</strong>。三者各司其职，通过标准接口组合在一起。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>组件</th><th>职责</th><th>典型实现</th></tr>
             <tr><td>Pipeline</td><td>编排完整推理流程：text encoding → denoising → decode</td><td><code>StableDiffusionPipeline</code></td></tr>
             <tr><td>Model</td><td>执行核心神经网络计算（U-Net、DiT、VAE）</td><td><code>UNet2DConditionModel</code></td></tr>
             <tr><td>Scheduler</td><td>管理噪声添加与去除的调度逻辑</td><td><code>DDPMScheduler</code></td></tr>
-        </table>
+        </table></div>
 
         <div class="tip">
             <strong>💡 理解三者的关系：</strong>Pipeline 就像一个餐厅的传菜流程，Model 是厨房里的大厨（负责最重的计算），Scheduler 是传菜员的节奏协调者（决定每一步怎么做）。三者可以独立替换——你可以换掉 Scheduler 而不改 Model，也可以换掉 Model 而不改 Pipeline 的编排逻辑。
@@ -143,7 +143,7 @@ image = (image / 2 + 0.5).clamp(0, 1).permute(0, 2, 3, 1).cpu().numpy()</code></
 
         <p>Scheduler 在 Diffusers 中是一个被严重低估的组件。很多同学以为 Scheduler 只是"怎么加噪声和去噪声"的数学公式，但实际上，不同类型的 Scheduler 实现了完全不同速度与质量的权衡：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>Scheduler 名称</th><th>采样步数</th><th>特点</th><th>适用场景</th></tr>
             <tr><td>DDPMScheduler</td><td>50-1000</td><td>标准 DDPM，精度最高，速度最慢</td><td>学术研究、质量优先</td></tr>
             <tr><td>PNDMScheduler</td><td>20-50</td><td>伪数值方法加速，兼容性好</td><td>老版本 SD 1.x 默认</td></tr>
@@ -151,7 +151,7 @@ image = (image / 2 + 0.5).clamp(0, 1).permute(0, 2, 3, 1).cpu().numpy()</code></
             <tr><td>LCMScheduler</td><td>1-4</td><td>Latent Consistency Model，一步生成</td><td>实时推理、低延迟场景</td></tr>
             <tr><td>EulerDiscreteScheduler</td><td>10-30</td><td>Euler 法解 ODE，简单稳定</td><td>ComfyUI 默认之一</td></tr>
             <tr><td>DDIMScheduler</td><td>10-50</td><td>非马尔可夫去噪，可控制随机性</td><td>图像编辑、inversion 场景</td></tr>
-        </table>
+        </table></div>
 
         <p>在 Diffusers 中切换 Scheduler 只需要一行代码：</p>
 
@@ -275,7 +275,7 @@ pipe.fuse_lora(adapter_names=["style", "character"],
 
         <p>排查了两天才找到根因——下表列出了从 0.24 到 0.30 的关键破坏性变更：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>变更项</th><th>0.24 行为</th><th>0.30 行为</th><th>影响</th></tr>
             <tr><td>VAE decode scale factor</td><td>手动 <code>1/0.18215</code></td><td>从 <code>vae.config.scaling_factor</code> 读取</td>
             <td>跨模型切换时数值错误</td></tr>
@@ -287,7 +287,7 @@ pipe.fuse_lora(adapter_names=["style", "character"],
             <td>使用 <code>AttentionProcessor</code> 新接口</td><td>自定义 attention 逻辑需要重写</td></tr>
             <tr><td>Safety checker</td><td>默认启用，可配置</td>
             <td>默认禁用，需手动启用</td><td>生产环境需显式开启安全检查</td></tr>
-        </table>
+        </table></div>
 
         <p>最让我们痛苦的是 VAE decode scale factor 的变化。在 0.24 中，社区代码几乎都硬编码了 <code>1/0.18215</code> 这个 magic number。但 SDXL 等新模型使用的 scaling factor 是 <code>0.13025</code>，0.30 通过 <code>vae.config.scaling_factor</code> 统一了读取方式。我们代码里写死的 magic number 导致 SDXL 模型输出严重色偏。</p>
 

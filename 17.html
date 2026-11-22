@@ -70,14 +70,14 @@
 
         <p>让我们先看清问题的规模。以 Diffusion Transformer 为例，训练过程中显存的消耗主要由以下几部分组成：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>消耗项</th><th>DiT-XL/2 (0.6B)</th><th>FLUX.1 (12B)</th><th>说明</th></tr>
             <tr><td>模型权重 (FP32)</td><td>~2.4 GB</td><td>~48 GB</td><td>12B × 4 bytes</td></tr>
             <tr><td>梯度</td><td>~2.4 GB</td><td>~48 GB</td><td>与权重等量</td></tr>
             <tr><td>优化器状态 (AdamW)</td><td>~4.8 GB</td><td>~96 GB</td><td>m + v 两个动量和</td></tr>
             <tr><td>中间激活 (Activations)</td><td>~8-16 GB</td><td>~80-160 GB</td><td>随 batch size 和序列长度变化</td></tr>
             <tr><td>总计</td><td>~17-25 GB</td><td>~272-352 GB</td><td>单卡 H100 (80GB) 远远不够</td></tr>
-        </table>
+        </table></div>
 
         <p>可以看到，对于 12B 参数的模型，即使忽略中间激活，仅权重+梯度+优化器状态就需要 192GB 显存——这已经超过了单张 H100 的 80GB。必须使用分布式策略。</p>
 
@@ -144,13 +144,13 @@ for batch in dataloader:
 
         <p>PipeFusion 的独特之处在于"patch-level"的并行：传统流水线并行是把模型的不同 layer 放在不同 GPU 上，但 DiT 的自注意力机制需要所有 patch 的完整特征图才能计算——如果只分 layer 不分 patch，GPU 间必须传输完整特征图，通信量巨大。PipeFusion 把 patch 也切分，每个 GPU 只处理一部分 patch，然后用 all-to-all 通信交换注意力计算所需的数据，大幅降低了单次通信的数据量。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>并行策略</th><th>切分维度</th><th>适用场景</th><th>通信模式</th></tr>
             <tr><td>DDP / FSDP</td><td>数据 (batch)</td><td>训练</td><td>All-Reduce / All-Gather</td></tr>
             <tr><td>Tensor Parallel (TP)</td><td>层内参数</td><td>训练 + 推理</td><td>All-Reduce (高频)</td></tr>
             <tr><td>Pipeline Parallel (PP)</td><td>层间</td><td>训练 + 推理</td><td>P2P (低频, 大消息)</td></tr>
             <tr><td>PipeFusion</td><td>层间 + patch</td><td>DiT 推理</td><td>All-to-All</td></tr>
-        </table>
+        </table></div>
 
         <h2>17.4 Flash Attention</h2>
 
@@ -168,13 +168,13 @@ for batch in dataloader:
 
         <p>除了分布式和算法优化，<strong>模型量化</strong>（Model Quantization）是另一个重要的加速手段。量化的核心思想：用更少 bit 来表示模型参数，从而减少显存占用和计算量。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>精度</th><th>位宽</th><th>显存节省 (vs FP32)</th><th>典型场景</th><th>质量影响</th></tr>
             <tr><td>FP32</td><td>32 bit</td><td>基线</td><td>训练主精度</td><td>—</td></tr>
             <tr><td>FP16 / BF16</td><td>16 bit</td><td>50%</td><td>训练 + 推理</td><td>几乎无损</td></tr>
             <tr><td>INT8</td><td>8 bit</td><td>75%</td><td>推理</td><td>轻微退化 (~0.1 CLIP Score)</td></tr>
             <tr><td>INT4</td><td>4 bit</td><td>87.5%</td><td>端侧推理</td><td>可见退化 (~0.3-0.5 CLIP Score)</td></tr>
-        </table>
+        </table></div>
 
         <div class="warning">
             <strong>⚠️ 踩坑实录：INT4 量化导致的人脸生成崩塌</strong><br><br>

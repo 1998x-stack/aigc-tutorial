@@ -83,7 +83,7 @@
 
         <p>这三种需求可以单独出现，也经常同时出现——比如"让图中的人物做这个姿势，同时保持这个角色的外观，还要有水墨风格"。此时就需要多条件组合使用。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>控制需求</th><th>推荐工具</th><th>控制精度</th><th>是否需要训练</th></tr>
             <tr><td>固定姿势/骨架</td><td>ControlNet-OpenPose</td><td>高（可精确到手指关节）</td><td>否（下载预训练模型即可）</td></tr>
             <tr><td>边缘/线条构图</td><td>ControlNet-Canny</td><td>中（取决于边缘检测质量）</td><td>否</td></tr>
@@ -91,7 +91,7 @@
             <tr><td>固定角色外观</td><td>LoRA</td><td>高</td><td>是（约 5-20 张图训练）</td></tr>
             <tr><td>固定视觉风格</td><td>LoRA / IP-Adapter</td><td>中高</td><td>否（IP-Adapter）或需少量训练</td></tr>
             <tr><td>参考图风格迁移</td><td>IP-Adapter</td><td>中</td><td>否</td></tr>
-        </table>
+        </table></div>
 
         <h2>21.2 ControlNet 实战</h2>
 
@@ -287,13 +287,13 @@ result = pipe(
 
         <p>以下是我在多次实践中总结的解决策略：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>冲突类型</th><th>表现</th><th>解决方案</th></tr>
             <tr><td>ControlNet vs. LoRA 姿势冲突</td><td>关节扭曲、身体变形</td><td>降低 ControlNet 强度到 0.5-0.6，或选择与目标姿势相似的 ControlNet 条件图</td></tr>
             <tr><td>IP-Adapter vs. LoRA 风格冲突</td><td>角色特征丢失、颜色过曝</td><td>IP-Adapter scale 降到 0.3-0.4，或移除 IP-Adapter 只用 LoRA</td></tr>
             <tr><td>ControlNet vs. IP-Adapter 构图冲突</td><td>画面割裂、物体错位</td><td>确保 ControlNet 条件图和 IP-Adapter 参考图的构图一致</td></tr>
             <tr><td>三者同时过强</td><td>生成结果偏离预期很远</td><td>使用 <code>disable_cfg</code> 或降低 CFG scale，给模型更多"自由发挥"空间</td></tr>
-        </table>
+        </table></div>
 
         <div class="warning">
             <strong>⚠️ 一个经典的踩坑经历：</strong>在一次商业项目中，客户要求"生成这个角色在某部动漫风格中做特定的战斗动作"。我同时使用了角色 LoRA + 动漫风格 IP-Adapter + OpenPose ControlNet。结果角色的面部完全错位——LoRA 要求的面部被 IP-Adapter 的风格特征覆盖了。整整花了两天才找到根因：IP-Adapter 的 ViT-H 图像编码器会提取参考图中的面部特征，即使我们只想要风格。最终方案是把 IP-Adapter 换成了"仅风格"模式（<code>ip_adapter_model.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.safetensors")</code>，使用基础版而非 plus 版本），并将 scale 降到 0.35。LoRA 的主体控制力就恢复了。<strong>如果你的 LoRA 训练的特征被其他组件覆盖了，优先排查 IP-Adapter 的强度，它是最容易"喧宾夺主"的一个。</strong>

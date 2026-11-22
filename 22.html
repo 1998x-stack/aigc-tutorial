@@ -74,12 +74,12 @@
 
         <p>OpenAI 在 2024 年 2 月发布的 Sora 是文生视频领域的里程碑事件。Sora 的核心技术栈可以拆解为三个关键组件：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>组件</th><th>技术方案</th><th>作用</th></tr>
             <tr><td>视频压缩网络（Video Compressor）</td><td>VAE 的 3D 扩展，将原始视频压缩到潜空间</td><td>降低时空维度，使 DiT 可以处理长视频</td></tr>
             <tr><td>时空 Patch Embedding</td><td>将视频表示为时空 patch 序列（spacetime patches）</td><td>统一不同分辨率、时长、宽高比的视频表示</td></tr>
             <tr><td>DiT 骨干网络</td><td>Scalable Diffusion Transformer with AdaLN</td><td>在潜空间执行去噪/流匹配过程</td></tr>
-        </table>
+        </table></div>
 
         <p>Sora 最核心的洞察是：<strong>把视频当作"一堆时空 patch 的序列"</strong>。具体来说，Sora 的 Video Compressor 将原始视频（如 1920×1080×30fps×10s≈ 6.2 亿像素）压缩成低维的潜空间表示，然后在这个潜空间中将视频切分成 3D patch（时间×高度×宽度）。每个 patch 被展平成一个 token，加上时间位置编码和空间位置编码后，送入 DiT 进行处理。</p>
 
@@ -114,7 +114,7 @@ class SpacetimePatchEmbed(nn.Module):
 
         <p>Sora 发布之后，开源社区迅速跟进，涌现了一批高质量的视频生成模型。以下是截至 2026 年 6 月的主要代表性模型：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>模型</th><th>研发团队</th><th>基础架构</th><th>最大时长</th><th>分辨率</th><th>开源状态</th></tr>
             <tr><td>Open-Sora 2.0</td><td>ColossalAI</td><td>DiT + 3D VAE</td><td>~16 秒</td><td>720p</td><td>全面开源</td></tr>
             <tr><td>HunyuanVideo（混元视频）</td><td>腾讯</td><td>DiT + Flow Matching</td><td>~30 秒</td><td>1080p</td><td>开源权重</td></tr>
@@ -122,7 +122,7 @@ class SpacetimePatchEmbed(nn.Module):
             <tr><td>Wan2.1（万相）</td><td>阿里</td><td>DiT + Flow Matching</td><td>~15 秒</td><td>1080p</td><td>开源</td></tr>
             <tr><td>Seedance 2.5</td><td>字节跳动</td><td>改进 DiT + 4K 引擎</td><td>30 秒</td><td>4K (3840×2160)</td><td>API 可用</td></tr>
             <tr><td>Kling 3.0（可灵）</td><td>快手</td><td>3D VAE + DiT</td><td>~60 秒</td><td>1080p</td><td>API 可用</td></tr>
-        </table>
+        </table></div>
 
         <p>HunyuanVideo 是开源模型中关注度最高的之一。它在 2024 年 12 月开源了完整的模型权重和推理代码，使用了 FLUX 类似的 MM-DiT + Rectified Flow 架构，并扩展到了视频领域。混元视频的核心创新包括：</p>
 
@@ -158,14 +158,14 @@ class SpacetimePatchEmbed(nn.Module):
 
         <p>视频生成的评估比图像复杂得多——不仅要评估<strong>单帧质量</strong>，还要评估<strong>时序一致性</strong>、<strong>运动自然度</strong>和<strong>文本-视频对齐</strong>。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>指标</th><th>全称</th><th>测量对象</th><th>说明</th></tr>
             <tr><td>FVD</td><td>Fréchet Video Distance</td><td>视频分布差异</td><td>基于 I3D 特征，衡量真实视频和生成视频的分布距离。类似图像中的 FID。</td></tr>
             <tr><td>VBench</td><td>Video Benchmark</td><td>综合质量</td><td>包含 16 个维度的评价体系（色彩、运动、时序一致性等）。目前最全面的自动化评测。</td></tr>
             <tr><td>CLIP Score</td><td>CLIP Similarity</td><td>文本-视频对齐</td><td>计算视频帧和 prompt 的 CLIP 相似度均值。</td></tr>
             <tr><td>人类偏好</td><td>Human Preference</td><td>主观质量</td><td>人工评分，通常以 A/B Test 或五点量表进行。最为可靠但成本最高。</td></tr>
             <tr><td>Flow Warp Error</td><td>光流一致性误差</td><td>时序连续性</td><td>用光流估计视频相邻帧的像素偏移，计算一致性误差。衡量"帧与帧之间是否平滑"。</td></tr>
-        </table>
+        </table></div>
 
         <div class="highlight">
             <strong>🌟 实战建议：</strong>如果你在做视频模型训练，我建议的评估流程是：训练中用 FVD + CLIP Score 做快速迭代验证（每 1000 步计算一次），训练完成后用 VBench 做全面评估，最终用人类偏好做上线前的最终确认。光流一致性是一个"被低估"的指标——很多模型单帧看起来很漂亮，但播放起来画面抖动严重，Flow Warp Error 能暴露这个问题。
@@ -186,14 +186,14 @@ class SpacetimePatchEmbed(nn.Module):
 
         <p>尽管取得了巨大进展，视频生成仍然面临着几个重大挑战：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>挑战</th><th>具体表现</th><th>当前进展</th></tr>
             <tr><td>长时序一致性</td><td>10 秒以上的视频中，人物衣着、背景物品可能发生变化</td><td>HunyuanVideo 通过 3D VAE 有效降低了长视频的 token 数量，但 30 秒以上仍不稳定</td></tr>
             <tr><td>物理规律理解</td><td>物体掉落方向不对、流体动画不自然、刚体碰撞物理不真实</td><td>部分模型（如 Kling 3.0）引入物理先验，但泛化到未见过场景仍困难</td></tr>
             <tr><td>推理成本</td><td>生成 10 秒 1080p 视频在 A100 上需要 3-10 分钟</td><td>sCM 和一致性蒸馏将时间缩短到秒级，但质量有折损</td></tr>
             <tr><td>运动轨迹控制</td><td>难以精确控制视频中物体的移动路径</td><td>类似图像的 ControlNet 方案（如 CameraCtrl、MotionCtrl）正在发展中</td></tr>
             <tr><td>多模态对齐</td><td>同时理解文字、画面、音频、字幕的联合生成</td><td>Gemini Omni 和 Emu3 在做统一建模，但音频-视频同步仍是难点</td></tr>
-        </table>
+        </table></div>
 
         <div class="warning">
             <strong>⚠️ 真实踩坑——视频生成的"幻觉"问题：</strong>2025 年我参与了一个用文生视频做产品广告的项目。我们使用 HunyuanVideo 生成一段 15 秒的产品展示视频，prompt 写了"一个白色陶瓷杯放在木桌上，咖啡冒着热气"。生成的每一帧都非常精美，但播到第 8 秒时，杯子突然变成了玻璃材质，第 12 秒又变回陶瓷。这个"材质漂移"现象在长视频中非常普遍——模型没有"保持物体一致性"的约束机制，每一帧都是独立生成的（即使有时序注意力），积累的误差会导致物体外观的渐变形变。目前最有效的缓解方案是 <strong>Cross-Frame Attention</strong>：让每一帧的 Self-Attention 层也看到第一帧的特征，从而维持外观一致性。这个技巧在大多数开源模型中都已经内置，但如果你自己在训练模型，一定要加上。

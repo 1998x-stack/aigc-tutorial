@@ -172,7 +172,7 @@ def adaLn_zero_block(x, c):
 
         <p>我们把目前主流条件控制方法放在一张表里对比：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>方法</th><th>条件类型</th><th>注入方式</th><th>是否需训练</th><th>参数量</th><th>代表作</th></tr>
             <tr><td>Cross-Attention</td><td>文本</td><td>文本特征 K/V 注入</td><td>预训练内置</td><td>—</td><td>Stable Diffusion</td></tr>
             <tr><td>AdaLN-Zero</td><td>条件嵌入</td><td>scale/shift/gate 调制</td><td>预训练内置</td><td>—</td><td>DiT, SD3, FLUX</td></tr>
@@ -180,7 +180,7 @@ def adaLn_zero_block(x, c):
             <tr><td>T2I-Adapter</td><td>结构条件</td><td>轻量适配器 + 特征注入</td><td>需单独训练</td><td>~80M</td><td>Color, Sketch, Seg</td></tr>
             <tr><td>IP-Adapter</td><td>图像条件</td><td>解耦 Cross-Attention</td><td>需单独训练</td><td>~22M</td><td>风格迁移, 人脸保持</td></tr>
             <tr><td>InstantID / PhotoMaker</td><td>身份保持</td><td>嵌入融合 + 注意力注入</td><td>需单独训练</td><td>~50M</td><td>ID 保持生成</td></tr>
-        </table>
+        </table></div>
 
         <div class="highlight">
             <strong>🌟 选择指南：</strong><br>

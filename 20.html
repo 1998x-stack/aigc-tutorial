@@ -148,19 +148,19 @@ L_CFM = E_{t, x_1, x ∼ p_t(x|x_1)} [ || v_θ(x, t) - u_t(x|x_1) ||^2 ]
 
         <p>换句话说，训练时只需要关注每一对 (x_0, x_1) 的局部路径，最终的 v_θ 学会了整个分布上的最优速度场——这就是为什么它能生成高质量的样本。</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>方法</th><th>损失函数形式</th><th>路径类型</th><th>特点</th></tr>
             <tr><td>DDPM</td><td>|| ε_θ(x_t, t) - ε ||²</td><td>扩散加噪路径</td><td>弯曲、随机</td></tr>
             <tr><td>Rectified Flow</td><td>|| v_θ(x_t, t) - (x_1 - x_0) ||²</td><td>线性插值路径</td><td>直线、确定</td></tr>
             <tr><td>Flow Matching (general)</td><td>|| v_θ(x_t, t) - u_t(x|x_1) ||²</td><td>任意可微路径</td><td>通用框架</td></tr>
             <tr><td>Stochastic Interpolant</td><td>|| s_θ(x_t, t) - target ||²</td><td>可带随机性插值</td><td>混合方案</td></tr>
-        </table>
+        </table></div>
 
         <h2>20.5 与 DDPM 的对比</h2>
 
         <p>让我们从几个关键维度系统比较 DDPM 和 Flow Matching：</p>
 
-        <table>
+        <div class="table-scroll"><table>
             <tr><th>对比维度</th><th>DDPM</th><th>Flow Matching (Rectified Flow)</th></tr>
             <tr><td>前向过程</td><td>逐步加噪: x_t = √ᾱ_t * x_0 + √(1-ᾱ_t) * ε</td><td>线性插值: x_t = (1-t)x_0 + t*x_1</td></tr>
             <tr><td>训练目标</td><td>预测噪声 ε</td><td>预测速度 v</td></tr>
@@ -169,7 +169,7 @@ L_CFM = E_{t, x_1, x ∼ p_t(x|x_1)} [ || v_θ(x, t) - u_t(x|x_1) ||^2 ]
             <tr><td>训练稳定性</td><td>良好（有成熟的噪声调度理论）</td><td>良好（避免了对噪声方差的精细调度）</td></tr>
             <tr><td>生成质量</td><td>优秀（已到 SOTA 水准）</td><td>同等或更优（轨迹更直 → 累积误差更小）</td></tr>
             <tr><td>理论基础</td><td>完备（SDE + Score Matching）</td><td>较新但发展迅速</td></tr>
-        </table>
+        </table></div>
 
         <p>从实践中来看，Flow Matching 在少步数场景下的优势非常显著：用 4 步推理时，Rectified Flow 生成的人脸还能保持五官清晰，而 DDPM 用 4 步采样基本是模糊一片。但在 50 步以上时，两者质量相当。</p>
 
