@@ -256,6 +256,21 @@
         .card:nth-child(6n+5) .chapter-num { background: #f7c6c6; color: #5a2e2e; }
         .card:nth-child(6n) .chapter-num { background: #c4b3e0; color: #2f2a4a; }
 
+        .fallback-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.4rem 1.2rem;
+            background: #f6fcf3;
+            border: 1px dashed #c6dfbe;
+            border-radius: 18px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .fallback-list a { color: #1f452b; text-decoration: none; font-size: 0.9rem; }
+        .fallback-list a:hover { text-decoration: underline; }
+        @media (max-width: 640px) { .fallback-list { grid-template-columns: 1fr; } }
+
         .state-msg {
             text-align: center;
             padding: 3rem;
@@ -271,17 +286,80 @@
     </style>
 </head>
 <body>
+<a class="skip-link" href="#catalog">跳转至课程目录</a>
 <div class="container">
-    <div class="header">
+    <header class="header">
         <h1><span class="emoji"></span><span class="title-text"></span></h1>
         <div class="sub"></div>
+    </header>
+
+    <main id="catalog">
+    <p class="section-dek">这是一套 28 章的生成模型实战教程：从概率基础与四大流派出发，深入扩散模型与 Flow Matching，再到多模态工程、部署服务化与前沿课题。每章给出机制直觉、可对照的架构与工程踩坑记录。</p>
+
+    <figure>
+        <svg role="img" aria-labelledby="roadmap-title roadmap-desc" viewBox="0 0 820 150" xmlns="http://www.w3.org/2000/svg">
+            <title id="roadmap-title">教程六个部分的递进关系</title>
+            <desc id="roadmap-desc">从理论奠基到综合项目，六个部分沿一条主线递进，箭头表示前置知识依赖。</desc>
+            <rect width="820" height="150" rx="16" fill="#faf8ff"/>
+            <path d="M120 75 H160 M260 75 H300 M400 75 H440 M540 75 H580 M680 75 H710" stroke="#8b5cf6" stroke-width="4" marker-end="url(#arw)"/>
+            <defs><marker id="arw" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+            <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+                <rect x="20" y="48" width="100" height="54" rx="12" fill="#ede9fe"/><text x="70" y="70">理论奠基</text><text x="70" y="88" font-size="11" fill="#6d28d9">1–7 章</text>
+                <rect x="160" y="48" width="100" height="54" rx="12" fill="#e0f2fe"/><text x="210" y="70">扩散核心</text><text x="210" y="88" font-size="11" fill="#0369a1">8–14 章</text>
+                <rect x="300" y="48" width="100" height="54" rx="12" fill="#dcfce7"/><text x="350" y="70">多模态工程</text><text x="350" y="88" font-size="11" fill="#15803d">15–18 章</text>
+                <rect x="440" y="48" width="100" height="54" rx="12" fill="#fef9c3"/><text x="490" y="70">进阶架构</text><text x="490" y="88" font-size="11" fill="#a16207">19–22 章</text>
+                <rect x="580" y="48" width="110" height="54" rx="12" fill="#ffe4e6"/><text x="635" y="70">工具与部署</text><text x="635" y="88" font-size="11" fill="#be123c">23–25 章</text>
+                <rect x="710" y="48" width="90" height="54" rx="12" fill="#e2e8f0"/><text x="755" y="70">综合项目</text><text x="755" y="88" font-size="11" fill="#334155">26–28 章</text>
+            </g>
+        </svg>
+        <figcaption>六个部分按“理论 → 机制 → 工程 → 部署 → 综合”的顺序组织，前一阶段的概念是后一阶段的前置知识。</figcaption>
+    </figure>
+
+    <h2>课程目录</h2>
+    <div id="cardContainer" class="course-grid">
+        <ul class="fallback-list" aria-label="全部章节（静态列表）">
+            <li><a href="01.html">第01章 生成模型概述</a></li>
+            <li><a href="02.html">第02章 概率生成理论基础</a></li>
+            <li><a href="03.html">第03章 VAE变分自编码器</a></li>
+            <li><a href="04.html">第04章 GAN对抗生成网络奠基</a></li>
+            <li><a href="05.html">第05章 GAN的演进</a></li>
+            <li><a href="06.html">第06章 自回归生成模型</a></li>
+            <li><a href="07.html">第07章 生成质量评估指标</a></li>
+            <li><a href="08.html">第08章 DDPM扩散数学理论</a></li>
+            <li><a href="09.html">第09章 DDPM加速与改进</a></li>
+            <li><a href="10.html">第10章 Stable Diffusion架构</a></li>
+            <li><a href="11.html">第11章 文本条件注入</a></li>
+            <li><a href="12.html">第12章 采样策略与调度</a></li>
+            <li><a href="13.html">第13章 DiT扩散Transformer</a></li>
+            <li><a href="14.html">第14章 视频扩散模型</a></li>
+            <li><a href="15.html">第15章 CLIP图文对比学习</a></li>
+            <li><a href="16.html">第16章 条件注入与控制</a></li>
+            <li><a href="17.html">第17章 分布式训练与推理</a></li>
+            <li><a href="18.html">第18章 质量调优与Debug</a></li>
+            <li><a href="19.html">第19章 FLUX与SD3</a></li>
+            <li><a href="20.html">第20章 Flow Matching整流流</a></li>
+            <li><a href="21.html">第21章 可控生成实战</a></li>
+            <li><a href="22.html">第22章 文生视频前沿</a></li>
+            <li><a href="23.html">第23章 Diffusers框架深入</a></li>
+            <li><a href="24.html">第24章 ComfyUI工作流</a></li>
+            <li><a href="25.html">第25章 模型部署与服务化</a></li>
+            <li><a href="26.html">第26章 自回归统一模型</a></li>
+            <li><a href="27.html">第27章 实时生成新范式</a></li>
+            <li><a href="28.html">第28章 综合项目</a></li>
+        </ul>
+        <noscript><p class="section-dek">本页课程卡片默认由 JavaScript 渲染；请启用 JavaScript，或直接访问 chapters 文件夹中的章节页面。</p></noscript>
     </div>
 
-    <div id="cardContainer" class="course-grid"></div>
+    <h2>如何使用本教程</h2>
+    <p>建议按章节顺序阅读，并在每章后打开对应的开源实现（如 Hugging Face Diffusers、ComfyUI）把架构对应到真实节点与参数上。第 2 章会系统回顾概率论基础；若你已经熟悉 KL 散度与极大似然，可直接从第 8 章的扩散模型数学开始。</p>
+    <div class="tip">
+        <strong>💡 阅读方式：</strong>每章先读“直觉与问题”，再看图示与公式，最后看工程实现。遇到标有“已作简化”或“教学示意”的数值，那是为便于理解而做的示意取值，并非论文实测结果；文中引用的实测指标均标注了来源论文。
+    </div>
 
     <div style="text-align:center;">
         <div class="footer"></div>
     </div>
+    </main>
 </div>
 
 <script>
@@ -293,7 +371,10 @@
         var footerEl = document.querySelector('.footer');
 
         function showError(msg) {
-            container.innerHTML = '<div class="state-msg error">' + msg + '</div>';
+            var note = document.createElement('div');
+            note.className = 'state-msg error';
+            note.textContent = msg;
+            container.insertBefore(note, container.firstChild);
         }
 
         fetch('courses.json')
