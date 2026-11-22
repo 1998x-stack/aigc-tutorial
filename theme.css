@@ -156,3 +156,78 @@ th {
     body { padding: 10px; }
     .main-content { padding: 20px; }
 }
+
+/* === Semantic structure & figures === */
+main { display: block; }
+nav.sidebar { display: block; }
+
+figure {
+    margin: 22px 0;
+    padding: 18px 18px 10px;
+    background: #fbfaff;
+    border: 1px solid #ddd6fe;
+    border-radius: 18px;
+}
+
+figure svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+}
+
+figcaption {
+    margin-top: 12px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: #4b5563;
+    border-top: 1px dashed #ddd6fe;
+    padding-top: 10px;
+}
+
+.section-dek {
+    color: #475569;
+    font-size: 1rem;
+    margin: -4px 0 12px;
+    padding-left: 21px;
+}
+
+.chapter-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 6px 0 14px;
+}
+
+.chapter-meta span {
+    font-size: 0.78rem;
+    background: #ede9fe;
+    color: #5b21b6;
+    border-radius: 30px;
+    padding: 3px 12px;
+    font-weight: 600;
+}
+
+.source-list { font-size: 0.9rem; line-height: 1.9; }
+.source-list a { color: #6d28d9; }
+
+.skip-link {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    background: #4c1d95;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 0 0 12px 0;
+    z-index: 100;
+}
+.skip-link:focus { left: 0; }
+
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid #147f80;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+}
