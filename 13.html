@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,34 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第13章 DiT扩散Transformer</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第13章 DiT扩散Transformer</h1>
 
         <p>大家好，我是你们的讲师。从 DDPM 到 Stable Diffusion，U-Net 一直是扩散模型去噪网络的标准架构。但在 2023 年，一项关键研究改变了这个格局——<strong>DiT（Diffusion Transformer）</strong>证明了 Transformer 可以取代 U-Net，并且在规模扩大时表现出更好的 Scaling Law（缩放定律）。到了 2024 年，SD 3.0 和 FLUX 全面拥抱 DiT 架构，U-Net 时代正式让位。</p>
 
         <p>这一章，我们将深入分析 DiT 的设计思想：为什么 Transformer 比 U-Net 更适合扩散模型？patchify 如何将潜空间特征图转化为 token 序列？AdaLN 机制如何注入时间步和条件信息？以及，MM-DiT 双流架构（SD3/FLUX 的核心创新）如何分别处理文本和图像特征？</p>
 
-        <h3>13.1 从 U-Net 到 Transformer：为什么需要 DiT</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f13t f13d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f13t">DiT 的 patchify 与 AdaLN 条件注入</title>
+        <desc id="f13d">把潜空间特征图切成不重叠的 patch 并展平成 token 序列，送入 Transformer 块；时间步与类别条件经 AdaLN 调制每个块的归一化参数。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="20" y="66" width="110" height="66" rx="10" fill="#ede9fe"/><text x="75" y="104">潜空间特征</text>
+            <rect x="170" y="80" width="110" height="40" rx="10" fill="#e0f2fe"/><text x="225" y="105">patchify</text>
+            <rect x="320" y="66" width="150" height="66" rx="10" fill="#dcfce7"/><text x="395" y="94">token 序列</text><text x="395" y="114" font-size="11" fill="#15803d">N = (H/p)·(W/p)</text>
+            <rect x="510" y="40" width="160" height="118" rx="12" fill="#fef9c3"/><text x="590" y="64">Transformer ×L</text><text x="590" y="86" font-size="11" fill="#a16207">AdaLN(t, y)</text><text x="590" y="104" font-size="11" fill="#a16207">调制 γ, β</text><text x="590" y="122" font-size="11" fill="#a16207">+ 自注意力</text><text x="590" y="140" font-size="11" fill="#a16207">+ MLP</text>
+            <rect x="710" y="80" width="95" height="46" rx="10" fill="#ffe4e6"/><text x="757" y="108">输出 ε̂</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" marker-end="url(#a13)"><path d="M130 99 H165"/><path d="M280 99 H315"/><path d="M470 99 H505"/><path d="M670 102 H705"/></g>
+        <defs><marker id="a13" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="24" font-size="12" fill="#4c1d95" text-anchor="middle">条件（时间步 t、类别/文本 y）不再是额外输入，而是调制每一层的归一化参数</text>
+    </svg>
+    <figcaption>DiT 用“切成 patch + Transformer”彻底取代了 U-Net 的卷积归纳偏置，使架构能随 GFLOPs 平滑扩展（Scaling Law）。图中 N、p、L 的具体取值随模型规格变化，此处为结构示意。</figcaption>
+</figure>
+
+<h2>13.1 从 U-Net 到 Transformer：为什么需要 DiT</h2>
 
         <p>U-Net 在扩散模型中表现优异，但它有一些本质上的局限性：</p>
         <ul>
@@ -64,7 +84,7 @@
             <strong>🌟 核心洞察：</strong>DiT 的成功不是偶然的。Transformer 的全局注意力机制天然适合扩散模型——因为去噪过程中，图像中相距很远的像素也需要协同决策（比如"一个物体的左右两侧需要对称"）。U-Net 通过下采样-上采样的瓶颈和跳跃连接间接实现全局交互，而 Transformer 通过自注意力直接做到这一点。
         </div>
 
-        <h3>13.2 patchify：将潜空间特征图切分为 patch 序列</h3>
+        <h2>13.2 patchify：将潜空间特征图切分为 patch 序列</h2>
 
         <p>DiT 的第一步操作是 <strong>patchify</strong>——将潜空间特征图切分成一个序列的 patch（图像块），类似于 ViT 处理 RGB 图像的方式。</p>
 
@@ -91,7 +111,7 @@ x = x + pos_embedding[:, :N, :]        # 加位置编码</code></pre>
 
         <p>标准的 DiT 通常使用 patch_size=2 以保留空间细节，同时在计算开销和生成质量之间取得平衡。</p>
 
-        <h3>13.3 DiT Block 设计：AdaLN 与条件注入</h3>
+        <h2>13.3 DiT Block 设计：AdaLN 与条件注入</h2>
 
         <p>DiT 的核心创新不在于 Transformer 本身，而在于<strong>如何将时间步 t 和条件信息（如类别标签或文本嵌入）注入到 Transformer Block 中</strong>。DiT 提出了几种设计方案：</p>
 
@@ -124,7 +144,7 @@ x = x + MLN(LayerNorm(x))  # 使用另一组 γ, β</code></pre>
             <strong>💡 设计原理：</strong>AdaLN 之所以比 Cross-Attention 更有效，原因在于条件信息（时间步 t、类别标签）通常是全局性的——它告诉你"现在要去噪到什么程度"或"生成什么类别的图像"，而不是告诉某个特定位置的像素应该如何变化。用全局条件去调节全局的归一化参数，比用 Cross-Attention 逐位置注入更符合问题的本质。
         </div>
 
-        <h3>13.4 Scaling Law：GFLOPs vs FID</h3>
+        <h2>13.4 Scaling Law：GFLOPs vs FID</h2>
 
         <p>DiT 论文中最引人注目的实验结果是它的 Scaling Law 研究。研究者训练了不同大小的 DiT 模型，并测试了计算量（GFLOPs）与生成质量（FID）之间的关系：</p>
 
@@ -143,7 +163,7 @@ x = x + MLN(LayerNorm(x))  # 使用另一组 γ, β</code></pre>
             <strong>🌟 核心洞察：</strong>DiT 的 Scaling Law 意味着"只要算力够，质量就能继续提升"。这解释了为什么 SD 3.0（8B 参数）和 FLUX（12B 参数）选择了 DiT 架构——工业界预见到了更大的模型会带来更好的效果，而 U-Net 无法支撑这个 scaling 趋势。
         </div>
 
-        <h3>13.5 Class-Conditional DiT</h3>
+        <h2>13.5 Class-Conditional DiT</h2>
 
         <p>DiT 的训练框架同时支持<strong>无条件生成</strong>（不需要任何条件信号）和<strong>条件生成</strong>（给定类别标签或文本）。以 class-conditional 为例：</p>
 
@@ -155,7 +175,7 @@ x = x + MLN(LayerNorm(x))  # 使用另一组 γ, β</code></pre>
 
         <p>DiT 的类条件生成在 ImageNet 上达到了当时最好的 FID=2.27（256×256），大幅超越了之前基于 U-Net 的扩散模型（ADM 的 FID=4.59）。</p>
 
-        <h3>13.6 MM-DiT 双流架构</h3>
+        <h2>13.6 MM-DiT 双流架构</h2>
 
         <p>DiT 最初是为 class-conditional 图像生成设计的，但 SD 3.0 和 FLUX 需要的是一种能同时处理文本和图像两种模态的架构。这就催生了 <strong>MM-DiT（Multimodal DiT）</strong>——一个双流（Dual-Stream）的 Transformer 架构。</p>
 
@@ -192,12 +212,18 @@ def mm_dit_block(img_tokens, txt_tokens, t_emb):
 
         <p>DiT 架构将扩散模型带入了一个新的时代——它不仅在质量上超越 U-Net，更重要的是展示了优秀的 Scaling Law，让更大的模型可以持续带来更好的生成效果。下一章，我们将把扩散模型从图像生成扩展到视频生成领域，看看"时序维度"的加入带来了哪些挑战和创新。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Peebles &amp; Xie, <em>Scalable Diffusion Models with Transformers</em>, ICCV 2023（DiT）. <a href="https://arxiv.org/abs/2212.09748">arXiv:2212.09748</a></li>
+    <li>Esser et al., <em>Scaling Rectified Flow Transformers for High-Resolution Image Synthesis</em>, 2024（MM-DiT）. <a href="https://arxiv.org/abs/2403.03206">arXiv:2403.03206</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="12.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="14.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

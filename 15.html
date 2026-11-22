@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,41 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第15章 CLIP图文对比学习</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第15章 CLIP图文对比学习</h1>
 
         <p>大家好，我是你们的讲师。在前面的章节中，我们反复提到了一个重要的组件——CLIP。Stable Diffusion 用它来理解文本语义，图像检索用它来做特征匹配，视频生成模型用它来对齐画面与描述。可以说，CLIP 是连接视觉和语言世界的桥梁。但 CLIP 究竟是什么？它是如何学会"看图识字"的？它在 AIGC 生态中到底扮演着什么样的角色？</p>
 
         <p>这一章，我们来拆解 CLIP（Contrastive Language-Image Pre-training）这个里程碑式的模型。从它的核心训练目标——对比学习，到双塔架构设计，再到它在 zero-shot 迁移和生成质量评估中的关键作用，完整走一遍。</p>
 
-        <h3>15.1 CLIP 的核心思想</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f15t f15d" viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg">
+        <title id="f15t">CLIP 的双塔对比学习结构</title>
+        <desc id="f15d">图像塔与文本塔分别把图像和描述编码到同一向量空间，训练拉近匹配的图文对、推开不匹配的对，从而支持零样本分类。</desc>
+        <rect width="820" height="220" rx="16" fill="#faf8ff"/>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="30" y="40" width="120" height="50" rx="10" fill="#ede9fe"/><text x="90" y="70">图像</text>
+            <rect x="30" y="120" width="120" height="50" rx="10" fill="#dcfce7"/><text x="90" y="150">文本描述</text>
+            <rect x="200" y="40" width="140" height="50" rx="10" fill="#e0f2fe"/><text x="270" y="70">图像编码器</text>
+            <rect x="200" y="120" width="140" height="50" rx="10" fill="#fef9c3"/><text x="270" y="150">文本编码器</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" marker-end="url(#a15)"><path d="M150 65 H195"/><path d="M150 145 H195"/><path d="M340 65 C 375 65 375 85 400 90"/><path d="M340 145 C 375 145 375 120 400 112"/></g>
+        <g>
+            <rect x="400" y="70" width="120" height="66" rx="8" fill="#ffffff" stroke="#c4b5fd"/>
+            <g fill="#f87171"><rect x="430" y="86" width="26" height="26"/></g>
+            <g fill="#e2e8f0"><rect x="462" y="86" width="26" height="26"/><rect x="430" y="118" width="26" height="26"/></g>
+            <rect x="462" y="118" width="26" height="26" fill="#f87171"/>
+        </g>
+        <text x="460" y="58" font-size="11" fill="#334155" text-anchor="middle">相似度矩阵（对角线为正）</text>
+        <rect x="580" y="70" width="210" height="66" rx="10" fill="#ffe4e6"/><text x="685" y="98" font-size="12" fill="#7f1d1d" text-anchor="middle">InfoNCE 对比损失</text><text x="685" y="118" font-size="11" fill="#be123c" text-anchor="middle">拉近对角、推开非对角</text>
+        <defs><marker id="a15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="205" font-size="12" fill="#334155" text-anchor="middle">训练后的共享空间支持零样本分类：把类别名编码成文本，取相似度最大的那一类</text>
+    </svg>
+    <figcaption>CLIP 把“图像与文本是否匹配”变成一个大 batch 内的对比任务；它的图文共享空间正是 Stable Diffusion 用文本控制生成的前提。矩阵中红色为匹配对（正样本），灰色为不匹配对（负样本）。</figcaption>
+</figure>
+
+<h2>15.1 CLIP 的核心思想</h2>
 
         <p>2021 年，OpenAI 发表了 CLIP 论文《Learning Transferable Visual Models from Natural Language Supervision》。它的核心直觉极其简单：<strong>用自然语言作为监督信号来训练视觉模型</strong>——不再需要人工标注的类别标签（如"猫"、"狗"），而是直接从互联网上搜集的图文对中学习。</p>
 
@@ -59,7 +86,7 @@
             <strong>🌟 核心洞察：</strong>CLIP 的突破不在于模型架构的创新，而在于"用对比学习做图文对齐"这个范式。它让视觉模型第一次能够从开放的自然语言描述中学习，而不是受限于固定的类别集合。这意味着模型可以理解"一只戴着墨镜的柯基犬在沙滩上奔跑"这样复杂的语义——这在传统的 ImageNet 分类任务中是不可能的。
         </div>
 
-        <h3>15.2 双塔架构</h3>
+        <h2>15.2 双塔架构</h2>
 
         <p>CLIP 采用标准的<strong>双塔架构</strong>（Dual-Encoder Architecture），分别处理图像和文本：</p>
 
@@ -79,7 +106,7 @@
 
         <p>训练时，一个 batch 包含 N 个图文对，可以得到 N×N 的相似度矩阵——对角线上的 N 个是正样本，其余 N²−N 个是负样本。这个矩阵就是对比损失的输入。</p>
 
-        <h3>15.3 InfoNCE 对比损失</h3>
+        <h2>15.3 InfoNCE 对比损失</h2>
 
         <p>CLIP 的核心训练目标函数是 <strong>InfoNCE</strong>（InfoNCE Loss，全称 Info Noise-Contrastive Estimation）损失。它的形式如下：</p>
 
@@ -111,7 +138,7 @@ loss = (loss_i + loss_t) / 2</code></pre>
 
         <p>对比损失的一个关键特性是：<strong>batch size 越大，负样本越多，模型学到的表征越好</strong>。CLIP 论文使用了 32,768 的 batch size，这在当时是相当奢侈的配置。这也是为什么很多开源复现很难达到原始 CLIP 的性能——batch size 不够大。</p>
 
-        <h3>15.4 Zero-shot 迁移能力</h3>
+        <h2>15.4 Zero-shot 迁移能力</h2>
 
         <p>CLIP 最令人惊叹的特性是它的 <strong>zero-shot 迁移</strong>能力——在完成对比学习预训练后，不做任何微调，直接迁移到下游分类任务上就能取得令人惊讶的效果。</p>
 
@@ -123,7 +150,7 @@ loss = (loss_i + loss_t) / 2</code></pre>
             <strong>🌟 为什么 zero-shot 能 work？</strong>关键在两点：第一，4 亿图文对的多样性远超任何一个标注数据集，模型学到了通用的视觉语义映射；第二，图文对比学习本质上是在学"语义对齐"——"a photo of a dog"和一张狗的图片在语义空间中应该很近，不管这条狗是什么品种、什么姿势。这种对齐天然具有泛化能力。
         </div>
 
-        <h3>15.5 CLIP 的局限</h3>
+        <h2>15.5 CLIP 的局限</h2>
 
         <p>CLIP 并非完美。经过大量实践，我们发现了它的几个关键短板：</p>
 
@@ -138,7 +165,7 @@ loss = (loss_i + loss_t) / 2</code></pre>
             <strong>⚠️ 踩坑实录：</strong>2023 年我在做一个"基于 CLIP 的电商图像检索"项目时，遇到了一个诡异的问题——搜索"蓝色连衣裙"时，总是召回大量红色连衣裙混在结果中。一开始我以为是数据问题，查了两天，最后发现是 CLIP 本身对颜色属性就不敏感。解决办法是换用了 SigLIP（Sigmoid 损失的改进版 CLIP），同时对颜色属性做了显式的数据增强。这个教训点醒了我：<strong>不要神化 CLIP，它只是"理解语义"而非"理解像素"——在需要细粒度感知的任务上，永远要做针对性优化。</strong>
         </div>
 
-        <h3>15.6 CLIP 在 AIGC 中的角色</h3>
+        <h2>15.6 CLIP 在 AIGC 中的角色</h2>
 
         <p>CLIP 在今天的 AIGC 生态中有两个核心角色：</p>
 
@@ -163,12 +190,18 @@ loss = (loss_i + loss_t) / 2</code></pre>
 
         <p>CLIP 为我们解决了"语义对齐"的问题——机器终于能理解"图"和"文"之间的关系了。但仅仅理解还远远不够：我们还需要更精确、更灵活地<strong>控制</strong>生成过程。下一章，我们将深入探讨条件注入的各种方式——从 Cross-Attention 到 ControlNet，从 AdaLN-Zero 到 IP-Adapter，看看工程师们是如何把各种维度的条件信息注入到生成模型中的。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Radford et al., <em>Learning Transferable Visual Models From Natural Language Supervision</em>, ICML 2021（CLIP）. <a href="https://arxiv.org/abs/2103.00020">arXiv:2103.00020</a></li>
+    <li>Jia et al., <em>Scaling Up Visual and Vision-Language Representation Learning With Noisy Text Supervision</em>, 2021（ALIGN）. <a href="https://arxiv.org/abs/2102.05918">arXiv:2102.05918</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="14.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="16.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,35 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第14章 视频扩散模型</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第14章 视频扩散模型</h1>
 
         <p>大家好，我是你们的讲师。如果说 2022-2023 年是"文生图"的年代，那么 2024-2026 年就是"文生视频"的爆发期。OpenAI 的 Sora、字节跳动的 Seedance、腾讯的混元视频、HunyuanVideo、CogVideoX……一波又一波的文生视频模型将 AI 生成的内容从静态图像推向动态影像。</p>
 
         <p>但视频生成远比图像生成困难。多了一个"时间维度"，意味着模型不仅要理解空间上的内容（是什么、在哪里），还要理解时间上的演化（接下来会发生什么）。这一章，我们将系统性地讲解视频扩散模型的架构设计、关键挑战、主流模型对比，以及训练和部署中的实战经验。</p>
 
-        <h3>14.1 从图像到视频：核心挑战</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f14t f14d" viewBox="0 0 820 210" xmlns="http://www.w3.org/2000/svg">
+        <title id="f14t">从图像的 2D patch 到视频的时空 patch</title>
+        <desc id="f14d">视频比图像多一个时间维度，把连续帧一起切成时空 patch，并用时间注意力在相邻帧之间保持外观与运动的一致性。</desc>
+        <rect width="820" height="210" rx="16" fill="#faf8ff"/>
+        <text x="30" y="26" font-size="12" fill="#334155">图像：空间 patch（H×W）</text>
+        <g fill="#ede9fe" stroke="#8b5cf6"><rect x="30" y="36" width="60" height="60" rx="6"/><rect x="96" y="36" width="60" height="60" rx="6"/><rect x="162" y="36" width="60" height="60" rx="6"/><rect x="30" y="102" width="60" height="60" rx="6"/><rect x="96" y="102" width="60" height="60" rx="6"/><rect x="162" y="102" width="60" height="60" rx="6"/></g>
+        <text x="30" y="186" font-size="12" fill="#334155">视频：时空 patch（T×H×W）</text>
+        <g fill="#e0f2fe" stroke="#147f80">
+            <rect x="320" y="40" width="70" height="70" rx="6"/><rect x="400" y="48" width="70" height="70" rx="6"/><rect x="480" y="56" width="70" height="70" rx="6"/><rect x="560" y="64" width="70" height="70" rx="6"/>
+        </g>
+        <g font-size="11" fill="#0c4a6e" text-anchor="middle"><text x="355" y="130">帧 t</text><text x="435" y="138">t+1</text><text x="515" y="146">t+2</text><text x="595" y="154">t+3</text></g>
+        <g stroke="#d06d4d" stroke-width="3" fill="none" marker-end="url(#a14)"><path d="M390 60 C 405 30 410 30 425 55"/><path d="M470 68 C 485 38 490 38 505 63"/><path d="M550 76 C 565 46 570 46 585 71"/></g>
+        <defs><marker id="a14" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#d06d4d"/></marker></defs>
+        <rect x="660" y="60" width="140" height="70" rx="10" fill="#fef9c3"/><text x="730" y="90" font-size="12" fill="#713f12" text-anchor="middle">时间注意力</text><text x="730" y="110" font-size="11" fill="#a16207" text-anchor="middle">保持帧间一致</text>
+        <text x="410" y="198" font-size="11" fill="#7f1d1d" text-anchor="middle">橙色箭头：相邻帧之间做时间注意力，防止闪烁与时序断裂</text>
+    </svg>
+    <figcaption>视频扩散的核心代价是维度爆炸：帧数 T 使 token 数量增长约 T 倍，显存与算力压力随之上升，这也是必须使用时空分解注意力、潜空间压缩与分布式推理的原因。</figcaption>
+</figure>
+
+<h2>14.1 从图像到视频：核心挑战</h2>
 
         <p>将图像扩散模型扩展到视频领域，面临三个核心挑战：</p>
 
@@ -66,11 +87,11 @@
             <strong>💡 直觉理解：</strong>视频扩散模型可以看作是一个"三维扩散"问题——空间维度（H×W）加上时间维度（T）。三维卷积和时序注意力就是用来处理这个新增的时间维度的。从图像模型初始化视频模型的权重（"膨胀"技术）是训练视频扩散模型的标配做法。
         </div>
 
-        <h3>14.2 时空架构设计</h3>
+        <h2>14.2 时空架构设计</h2>
 
         <p>视频扩散模型的核心架构有两种主要路线：<strong>3D U-Net</strong> 和 <strong>3D DiT</strong>。</p>
 
-        <h4>3D U-Net：时空卷积 + 时序注意力</h4>
+        <h3>3D U-Net：时空卷积 + 时序注意力</h3>
         <p>这是 Video Diffusion Model（VDM）和早期 Stable Video Diffusion 使用的架构。它在标准 2D U-Net 的基础上，在每一层加入：</p>
         <ul>
             <li><strong>3D 卷积</strong>：将 2D 卷积替换为 3D 卷积（核从 3×3 变为 3×3×3），同时处理空间和时间维度</li>
@@ -92,7 +113,7 @@ def video_unet_block(x, t_emb, cond):
     x = CrossAttention(x, cond)
     return x</code></pre>
 
-        <h4>3D DiT：视频扩散 Transformer</h4>
+        <h3>3D DiT：视频扩散 Transformer</h3>
         <p>2024-2025 年的新模型（如 Sora、HunyuanVideo、CogVideoX）更倾向于使用 3D DiT 架构。它将视频切分为<strong>时空 patch（Spatial-Temporal Patches）</strong>，然后用 Transformer 统一处理所有 token。</p>
 
         <ul>
@@ -101,7 +122,7 @@ def video_unet_block(x, t_emb, cond):
             <li><strong>级联架构</strong>：先低分辨率生成，再级联超分和时间插帧</li>
         </ul>
 
-        <h3>14.3 文生视频模型对比</h3>
+        <h2>14.3 文生视频模型对比</h2>
 
         <p>截至 2026 年中的主流文生视频模型概览：</p>
 
@@ -119,11 +140,11 @@ def video_unet_block(x, t_emb, cond):
             <strong>🌟 核心洞察：</strong>从表中可以看出几个趋势：几乎所有 2024 年后的高质量视频模型都选择了 DiT 架构（而非 U-Net）；Flow Matching 正在替代传统的 DDPM 噪声预测目标成为标配；开源模型（HunyuanVideo、CogVideoX）的质量正在快速追赶闭源模型，这推动了整个生态的发展。
         </div>
 
-        <h3>14.4 常用数据集与评估标准</h3>
+        <h2>14.4 常用数据集与评估标准</h2>
 
         <p>视频生成模型的训练和评估需要专门的数据集和指标：</p>
 
-        <h4>常用数据集</h4>
+        <h3>常用数据集</h3>
         <ul>
             <li><strong>WebVid-10M</strong>：约 1000 万条文本-视频对，从互联网抓取，是训练视频扩散模型最常用的数据集之一</li>
             <li><strong>HD-VILA-100M</strong>：1 亿条文本-视频对，分辨率更高，时长更长</li>
@@ -131,7 +152,7 @@ def video_unet_block(x, t_emb, cond):
             <li><strong>UCF-101 / Kinetics-600</strong>：学术基准数据集，用于动作识别和视频理解，也被用于生成评估</li>
         </ul>
 
-        <h4>VBench 评估标准</h4>
+        <h3>VBench 评估标准</h3>
         <p>VBench 是当前最权威的文生视频综合评估框架，包含 16 个维度的指标：</p>
 
         <table>
@@ -151,7 +172,7 @@ def video_unet_block(x, t_emb, cond):
             <strong>💡 评估建议：</strong>VBench 的 16 个维度覆盖了视频质量的大部分方面，但要注意——<strong>自动化的 VBench 分数不完全等同于人类的主观观感</strong>。统计学研究发现，"Subject Consistency"和"Background Consistency"对人类的整体满意度影响最大，这两个维度应该重点关注。
         </div>
 
-        <h3>14.5 视频生成的实际应用与限制</h3>
+        <h2>14.5 视频生成的实际应用与限制</h2>
 
         <p>尽管视频生成在 2025-2026 年取得了惊人的进展，但它仍然面临一些本质性的限制：</p>
 
@@ -162,7 +183,7 @@ def video_unet_block(x, t_emb, cond):
             <li><strong>文本理解能力弱</strong>：相比图像生成，视频生成中文本 prompt 的遵循度要差得多，特别是涉及"先后顺序"（"先 A 后 B"）和"因果关系"（"因为 A 所以 B"）的文本。</li>
         </ul>
 
-        <h3>14.6 视频扩散训练中的显存管理</h3>
+        <h2>14.6 视频扩散训练中的显存管理</h2>
 
         <p>显存管理是视频扩散模型训练和推理中最头疼的问题之一。视频需要同时处理多个帧，显存占用比图像呈线性增长。</p>
 
@@ -189,12 +210,19 @@ def video_unet_block(x, t_emb, cond):
 
         <p>下一章，我们将回到图像生成领域的一个关键基础组件——CLIP 图文对比学习模型。它是 SD 中文本编码的核心，也是 ControlNet、IP-Adapter 等条件注入技术的基础。理解 CLIP 的工作原理，将帮助你更深入地理解整个 AIGC 生态中"图文对齐"的根本机制。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Huang et al., <em>VBench: Comprehensive Benchmark Suite for Video Generative Models</em>, 2023. <a href="https://arxiv.org/abs/2311.17982">arXiv:2311.17982</a></li>
+    <li>Kong et al., <em>HunyuanVideo: A Systematic Framework For Large Video Generative Models</em>, 2024. <a href="https://arxiv.org/abs/2412.03603">arXiv:2412.03603</a></li>
+    <li>Brooks et al., <em>Video Generation Models as World Simulators</em>, OpenAI 2024（Sora 技术报告）. <a href="https://openai.com/research/video-generation-models-as-world-simulators">openai.com</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="13.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="15.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
