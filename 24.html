@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,38 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第24章 ComfyUI工作流</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第24章 ComfyUI工作流</h1>
 
         <p>大家好，我是你们的讲师。如果你问一个 AIGC 从业者 2025-2026 年最常用的工具是什么，答案很可能是 ComfyUI。它从 2023 年一个名不见经传的开源项目，成长为了扩散模型工作流的"事实标准"。为什么？因为在 Diffusers 里你需要写 50 行代码才能组装一个 ControlNet + LoRA 的推理管线，而在 ComfyUI 里只需要拖拽连接几个节点——而且你<strong>可视化地看到了整个数据流</strong>。</p>
 
         <p>这一章，我们将从 ComfyUI 的设计哲学出发，深入理解它的节点系统、LoRA 与 ControlNet 的加载方式，以及如何设计高效的生产级工作流。最后，我会做一个 ComfyUI 与 Auto1111 WebUI 和 Diffusers API 的全面对比，帮助你选择最适合场景的工具。</p>
 
-        <h3>24.1 ComfyUI 的设计哲学</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f24t f24d" viewBox="0 0 820 210" xmlns="http://www.w3.org/2000/svg">
+        <title id="f24t">ComfyUI 典型工作流的节点连接</title>
+        <desc id="f24d">模型与文本经加载和编码节点送入采样器，采样器输出潜变量交给解码节点，最后保存为图像；LoRA 与 ControlNet 作为支线接入。</desc>
+        <rect width="820" height="210" rx="16" fill="#faf8ff"/>
+        <g font-size="11" text-anchor="middle" fill="#1e1b4b">
+            <rect x="20" y="30" width="130" height="42" rx="10" fill="#ede9fe"/><text x="85" y="56">CheckpointLoader</text>
+            <rect x="20" y="90" width="130" height="42" rx="10" fill="#e0f2fe"/><text x="85" y="116">CLIPTextEncode</text>
+            <rect x="20" y="150" width="130" height="42" rx="10" fill="#dcfce7"/><text x="85" y="176">LoRA / ControlNet</text>
+            <rect x="230" y="90" width="130" height="42" rx="10" fill="#fef9c3"/><text x="295" y="116">KSampler</text>
+            <rect x="440" y="90" width="130" height="42" rx="10" fill="#e0f2fe"/><text x="505" y="116">VAEDecode</text>
+            <rect x="650" y="90" width="140" height="42" rx="10" fill="#ffe4e6"/><text x="720" y="116">SaveImage</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#a24)">
+            <path d="M150 51 C 190 51 200 100 225 105"/><path d="M150 111 H225"/><path d="M150 171 C 190 171 200 122 225 117"/><path d="M360 111 H435"/><path d="M570 111 H645"/>
+        </g>
+        <defs><marker id="a24" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="24" font-size="12" fill="#334155" text-anchor="middle">节点 = 一个可复用的函数；连线 = 张量依赖关系；工作流即计算图</text>
+        <text x="410" y="200" font-size="11" fill="#64748b" text-anchor="middle">教学示意：实际工作流常包含多个采样器、条件合并与控制网节点</text>
+    </svg>
+    <figcaption>ComfyUI 把扩散采样显式地拆成数据流图：由于依赖关系可见，出错时可以从“哪个节点的输入有问题”反向定位，而不是面对一个黑盒 API。</figcaption>
+</figure>
+
+<h2>24.1 ComfyUI 的设计哲学</h2>
 
         <p>ComfyUI 的核心思想是：<strong>每个节点对应一个模型操作，节点之间的连线就是张量数据流</strong>。这本质上是一个可视化数据流图（Dataflow Graph），每个节点是一个纯函数——输入张量，输出张量，没有副作用。</p>
 
@@ -69,17 +93,17 @@
             <strong>🌟 核心洞察：</strong>ComfyUI 实际上是在做"显式的数据流追踪"。在 Diffusers 中，<code>pipe()</code> 内部发生了什么你只能通过阅读源码来理解。而在 ComfyUI 中，每个节点都是一次 PyTorch 前向调用，连线就是 <code>return</code> 和 <code>input</code> 的关系。如果你理解了第 23 章中 StableDiffusionPipeline 的五步流程，你在 ComfyUI 里只需要把这五步对应的节点连接起来即可。
         </div>
 
-        <h3>24.2 核心节点详解</h3>
+        <h2>24.2 核心节点详解</h2>
 
         <p>一个最基础的文生图工作流包含以下核心节点，它们的组合对应了上一章我们讲过的完整推理流程：</p>
 
-        <h4>CheckpointLoader</h4>
+        <h3>CheckpointLoader</h3>
         <p>这是工作流的入口。它加载整个模型（U-Net + VAE + CLIP text encoder）到显存中。输出三个连接口：<strong>model</strong>（U-Net）、<strong>clip</strong>（CLIP text encoder）、<strong>vae</strong>（VAE）。注意，这三个输出是<strong>模型的引用</strong>，不是张量——它们需要在后续节点中被"消耗"。</p>
 
-        <h4>CLIPTextEncode</h4>
+        <h3>CLIPTextEncode</h3>
         <p>接收来自 CheckpointLoader 的 <strong>clip</strong> 输入和你的 prompt 文本，输出 <strong>conditioning</strong>（即 text embeddings）。通常你需要两个 CLIPTextEncode 节点：一个用于正向 prompt，一个用于空的负向 prompt。这两个 conditioning 输出连接到 KSampler 的 <strong>positive</strong> 和 <strong>negative</strong> 输入口，实现 CFG 引导。</p>
 
-        <h4>KSampler</h4>
+        <h3>KSampler</h3>
         <p>这是工作流的心脏。它接收 <strong>model</strong>（U-Net）、<strong>positive</strong> / <strong>negative</strong> conditioning、<strong>latent_image</strong>（初始噪声或输入图），内部执行完整的去噪循环。关键参数包括：</p>
 
         <ul>
@@ -91,7 +115,7 @@
             <li><strong>denoise：</strong>去噪强度（1.0 = 文生图，0.3-0.7 = 图生图）</li>
         </ul>
 
-        <h4>VAEDecode</h4>
+        <h3>VAEDecode</h3>
         <p>接收来自 KSampler 输出的潜变量 <strong>latent</strong> 和 CheckpointLoader 的 <strong>vae</strong>，将潜变量解码为像素图像。输出 <strong>image</strong>，可以连接到 SaveImage 节点保存到本地，或者继续传给放大、后期处理节点。</p>
 
         <pre><code># 一个标准文生图工作流的节点连接逻辑（伪代码）：
@@ -125,9 +149,9 @@ SaveImage(image=image, filename_prefix="output")</code></pre>
             <strong>💡 KSampler 的 sampler_name 与 Scheduler 的关系：</strong>sampler_name 决定<strong>数值积分器</strong>（如 euler、dpmpp_2m、uni_pc），scheduler 决定<strong>噪声 schedule 曲线的形状</strong>（normal 是线性，karras 给早期步数更多权重，exponential 是对数曲线）。不同的组合会产生截然不同的生成效果——experiment! 这是最便宜的调优手段。
         </div>
 
-        <h3>24.3 LoRA 与 ControlNet 加载</h3>
+        <h2>24.3 LoRA 与 ControlNet 加载</h2>
 
-        <h4>LoRA 节点连接</h4>
+        <h3>LoRA 节点连接</h3>
         <p>在 ComfyUI 中加载 LoRA 比 Diffusers 更直观：只需要在 checkpoint 和 KSampler 之间插入一个 <strong>LoRALoader</strong> 节点。它连接在 model 的链路上，相当于将 LoRA 权重注入到 U-Net 中：</p>
 
         <pre><code># LoRA 加载的连接方式
@@ -147,7 +171,7 @@ ksample = KSampler(model=lora_applied, ...)</code></pre>
 
         <p>多 LoRA 叠加就是串联多个 LoRALoader：第一个输出 model 连到第二个的 model 输入口，形成链式叠加。每个 LoRA 的 strength 独立控制，组合效果是各 LoRA 权重的线性叠加。</p>
 
-        <h4>ControlNet 节点连接</h4>
+        <h3>ControlNet 节点连接</h3>
         <p>ControlNet 的加载涉及控制图像的处理。典型的多 ControlNet 工作流如下：</p>
 
         <pre><code># ControlNet 加载连接方式
@@ -175,7 +199,7 @@ ksample = KSampler(model=checkpoint.model, positive=controlled, ...)</code></pre
             <strong>⚠️ 踩坑实录：</strong>我曾经接到一个用户反馈，说他的 ControlNet 工作流"完全不起作用"——不管怎么调 strength，生成结果都和没加 ControlNet 一样。我远程看了他的工作流截图，发现他把 ControlNetApply 节点的输出连到了 KSampler 的 <strong>negative</strong> 输入口，而不是 <strong>positive</strong>。这意味着 ControlNet 的空间引导信号被当作了"不要生成的内容"——CFG 中的负向条件。这是 ComfyUI 新手最常见的错误之一：<strong>control signal 必须连接到 positive conditioning，因为你要告诉模型"生成什么"而不是"不生成什么"</strong>。
         </div>
 
-        <h3>24.4 工作流设计最佳实践</h3>
+        <h2>24.4 工作流设计最佳实践</h2>
 
         <p>经过大量实战检验，以下工作流设计原则值得你记住：</p>
 
@@ -191,7 +215,7 @@ ksample = KSampler(model=checkpoint.model, positive=controlled, ...)</code></pre
             <strong>🌟 核心洞察：</strong>ComfyUI 工作流的质量不取决于节点的数量，而取决于对<strong>数据流方向</strong>的理解。一个 15 个节点的精炼工作流，往往比 50 个节点的"堆砌型"工作流更可靠。判断标准很简单：如果你不能在一张纸上画出所有数据的流动路径，你的工作流就太复杂了。
         </div>
 
-        <h3>24.5 ComfyUI vs Auto1111 WebUI vs Diffusers API</h3>
+        <h2>24.5 ComfyUI vs Auto1111 WebUI vs Diffusers API</h2>
 
         <p>很多同学纠结于应该学哪个工具。我的建议是：<strong>全都要，但各有侧重</strong>。下面这个对比表基于 2025-2026 年的生态现状：</p>
 
@@ -208,7 +232,7 @@ ksample = KSampler(model=checkpoint.model, positive=controlled, ...)</code></pre
 
         <p>我的个人工作流是这样的：<strong>原型阶段用 ComfyUI</strong> 快速验证 ControlNet/LoRA 组合效果，调整参数；<strong>一旦方案确定，用 Diffusers API 复现</strong>并部署成服务。Auto1111 主要用于快速出图和社区分享工作流。三者不是互斥关系，而是不同阶段的工具选择。</p>
 
-        <h3>24.6 实战踩坑：节点连接错误排查方法论</h3>
+        <h2>24.6 实战踩坑：节点连接错误排查方法论</h2>
 
         <p>ComfyUI 虽然可视化，但"可视化"不等于"不会出错"。常见问题分三类：</p>
 
@@ -230,12 +254,18 @@ ksample = KSampler(model=checkpoint.model, positive=controlled, ...)</code></pre
 
         <p>到这里，我们已经系统学习了 ComfyUI 的设计哲学、核心节点、LoRA 与 ControlNet 的加载方式，以及工作流设计的最佳实践。这些技能让你能够以可视化的方式快速原型化任何扩散模型推理管线。下一章，我们将从<strong>开发视角切换到工程视角</strong>，学习如何将训练好的模型导出、优化并部署成生产级 API 服务——这里面涉及的 ONNX/TensorRT 导出、推理优化和 API 工程设计，是将 AIGC 技能变现的关键能力。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+    <li>Zhang et al., <em>Adding Conditional Control to Text-to-Image Diffusion Models</em>, 2023（ControlNet 节点）. <a href="https://arxiv.org/abs/2302.05543">arXiv:2302.05543</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="23.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="25.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

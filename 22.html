@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,35 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第22章 文生视频前沿</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第22章 文生视频前沿</h1>
 
         <p>大家好，我是你们的讲师。如果说 2022-2023 年是文生图的爆发期，那么 2024-2026 年就是<strong>文生视频</strong>的爆发期。从 OpenAI 在 2024 年 2 月发布的 Sora 引爆全球热度，到国产混元视频、可灵 3.0 的商业化落地，再到 2026 年 Seedance 2.5 实现 4K 30 秒视频生成——文生视频的技术演进速度远超所有人的预期。</p>
 
         <p>这一章我们将深入前沿：Sora 的核心技术是什么？开源视频模型生态发展到什么程度了？视频生成的评估指标有哪些？以及站在 2026 年中的今天，视频生成面临的终极挑战是什么。</p>
 
-        <h3>22.1 Sora 的核心创新</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f22t f22d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f22t">Sora 的时空 patch 统一表示</title>
+        <desc id="f22d">先把视频压缩到低维潜空间，再切成时空 patch 作为 token 序列送入扩散 Transformer，因此同一个模型能处理不同分辨率、时长和宽高比的视频。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="12" text-anchor="middle" fill="#1e1b4b">
+            <rect x="25" y="70" width="120" height="60" rx="10" fill="#ede9fe"/><text x="85" y="95">原始视频</text><text x="85" y="114" font-size="11" fill="#6d28d9">可变长/分辨率</text>
+            <rect x="180" y="70" width="140" height="60" rx="10" fill="#e0f2fe"/><text x="250" y="95">潜空间压缩</text><text x="250" y="114" font-size="11" fill="#0369a1">时空 VAE</text>
+            <rect x="355" y="70" width="160" height="60" rx="10" fill="#dcfce7"/><text x="435" y="95">时空 patch</text><text x="435" y="114" font-size="11" fill="#15803d">打成 token 序列</text>
+            <rect x="550" y="70" width="150" height="60" rx="10" fill="#fef9c3"/><text x="625" y="95">扩散 Transformer</text><text x="625" y="114" font-size="11" fill="#a16207">去噪生成</text>
+            <rect x="730" y="70" width="70" height="60" rx="10" fill="#ffe4e6"/><text x="765" y="105">视频</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#a22)"><path d="M145 100 H175"/><path d="M320 100 H350"/><path d="M515 100 H545"/><path d="M700 100 H725"/></g>
+        <defs><marker id="a22" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="45" font-size="12" fill="#334155" text-anchor="middle">统一表示的核心：把“帧”也当成一个可切分的维度</text>
+        <text x="410" y="175" font-size="11" fill="#64748b" text-anchor="middle">教学示意：具体 patch 尺寸与压缩率随各家实现不同</text>
+    </svg>
+    <figcaption>Sora 的关键不在于 patch 本身，而在于把视频当作可伸缩的潜空间 token 序列，从而用同一套扩散 Transformer 处理不同分辨率、时长与宽高比（Sora 技术报告中的“可变时长/分辨率/宽高比”）。</figcaption>
+</figure>
+
+<h2>22.1 Sora 的核心创新</h2>
 
         <p>OpenAI 在 2024 年 2 月发布的 Sora 是文生视频领域的里程碑事件。Sora 的核心技术栈可以拆解为三个关键组件：</p>
 
@@ -89,7 +110,7 @@ class SpacetimePatchEmbed(nn.Module):
             <strong>🌟 Sora 的"遗产"：</strong>虽然 OpenAI 在 2025 年关停了 Sora 的独立服务（将其能力并入 GPT 生态和 Sora 2 代中），但 Sora 的技术范式——DiT + 时空 patch + 视频压缩网络——已经成为了整个视频生成领域的事实标准。几乎所有后续出现的视频模型都在沿用这个范式。
         </div>
 
-        <h3>22.2 开源视频模型生态</h3>
+        <h2>22.2 开源视频模型生态</h2>
 
         <p>Sora 发布之后，开源社区迅速跟进，涌现了一批高质量的视频生成模型。以下是截至 2026 年 6 月的主要代表性模型：</p>
 
@@ -115,7 +136,7 @@ class SpacetimePatchEmbed(nn.Module):
             <strong>💡 提示：</strong>如果你想自己动手尝试文生视频，我推荐从 <strong>HunyuanVideo</strong> 入手。它的开源程度最高（权重 + 推理代码 + 训练代码均可用），社区资料最丰富，且在单卡 A100 上就能跑（通过梯度检查点和时序注意力切分）。运行命令很简单：<code>python sample.py --prompt "你的描述"</code>。
         </div>
 
-        <h3>22.3 Sora 2 与 sCM 实时生成</h3>
+        <h2>22.3 Sora 2 与 sCM 实时生成</h2>
 
         <p>2025 年底，OpenAI 发布了 Sora 2，它基于 <strong>sCM（Simplified Consistency Matching）</strong> 架构实现了实时视频生成。sCM 的核心思想是将 Flow Matching 的 ODE 求解步骤缩减到 1-2 步——它学习的是 Flow Matching 轨迹的"一致性映射"：</p>
 
@@ -133,7 +154,7 @@ class SpacetimePatchEmbed(nn.Module):
 
         <p>Sora 2 以此实现了 1-2 步的实时视频生成——输入 prompt 后不到一秒就能看到结果。但 sCM 也有代价：单步生成的质量仍然不如多步 ODE 求解的结果，尤其是在细节一致性和运动流畅度上。</p>
 
-        <h3>22.4 视频评估指标</h3>
+        <h2>22.4 视频评估指标</h2>
 
         <p>视频生成的评估比图像复杂得多——不仅要评估<strong>单帧质量</strong>，还要评估<strong>时序一致性</strong>、<strong>运动自然度</strong>和<strong>文本-视频对齐</strong>。</p>
 
@@ -150,7 +171,7 @@ class SpacetimePatchEmbed(nn.Module):
             <strong>🌟 实战建议：</strong>如果你在做视频模型训练，我建议的评估流程是：训练中用 FVD + CLIP Score 做快速迭代验证（每 1000 步计算一次），训练完成后用 VBench 做全面评估，最终用人类偏好做上线前的最终确认。光流一致性是一个"被低估"的指标——很多模型单帧看起来很漂亮，但播放起来画面抖动严重，Flow Warp Error 能暴露这个问题。
         </div>
 
-        <h3>22.5 2026 年最新进展</h3>
+        <h2>22.5 2026 年最新进展</h2>
 
         <p>2026 年视频生成领域的几个里程碑：</p>
 
@@ -161,7 +182,7 @@ class SpacetimePatchEmbed(nn.Module):
             <li><strong>可灵 3.0：</strong>实现"文生视频 + 图生视频 + 视频编辑 + 视频延展"的全链路覆盖，单次生成最长 60 秒。</li>
         </ul>
 
-        <h3>22.6 视频生成的挑战</h3>
+        <h2>22.6 视频生成的挑战</h2>
 
         <p>尽管取得了巨大进展，视频生成仍然面临着几个重大挑战：</p>
 
@@ -182,12 +203,18 @@ class SpacetimePatchEmbed(nn.Module):
 
         <p>下一章，我们将回到工程实践——深入了解 Diffusers 框架的内部机制，看看这个承载了数百个生成模型的工具库是怎么设计的，以及如何针对自己的需求进行定制和扩展。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Brooks et al., <em>Video Generation Models as World Simulators</em>, OpenAI 2024（Sora 技术报告）. <a href="https://openai.com/research/video-generation-models-as-world-simulators">openai.com</a></li>
+    <li>Kong et al., <em>HunyuanVideo: A Systematic Framework For Large Video Generative Models</em>, 2024. <a href="https://arxiv.org/abs/2412.03603">arXiv:2412.03603</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="21.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="23.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

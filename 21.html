@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,36 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第21章 可控生成实战</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第21章 可控生成实战</h1>
 
         <p>大家好，我是你们的讲师。经过前面 20 章的理论学习，我们已经掌握了扩散模型、Flow Matching、DiT 等一系列核心技术。但有一个问题始终悬而未决：<strong>如何精确控制模型生成的内容？</strong> 写 prompt 只能控制"大概的方向"，如果你想让画面中的人物摆出特定姿势、保持某个角色的固定形象、或者模仿一张参考图的风格——仅仅靠写 prompt 是不行的。</p>
 
         <p>这一章是纯实战章节。我们会系统学习三种最常用的可控生成技术：<strong>ControlNet</strong>（空间条件控制）、<strong>LoRA</strong>（模型微调）和 <strong>IP-Adapter</strong>（图像风格迁移）。这三种技术各有分工，也经常需要组合使用。我会手把手带你看代码、调参数、修 bug。</p>
 
-        <h3>21.1 可控生成的需求</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f21t f21d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f21t">多种控制条件的组合与权重平衡</title>
+        <desc id="f21d">文本、结构（ControlNet）、风格（LoRA）、参考图（IP-Adapter）可以同时接入同一个扩散模型，各自的权重需要在生成质量与约束强度之间做平衡。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="12" text-anchor="middle" fill="#1e1b4b">
+            <rect x="20" y="24" width="150" height="40" rx="10" fill="#dcfce7"/><text x="95" y="49">提示词</text>
+            <rect x="20" y="80" width="150" height="40" rx="10" fill="#fee2e2"/><text x="95" y="105">ControlNet 结构</text>
+            <rect x="20" y="136" width="150" height="40" rx="10" fill="#ede9fe"/><text x="95" y="161">LoRA 风格</text>
+            <rect x="240" y="80" width="150" height="40" rx="10" fill="#e0f2fe"/><text x="315" y="105">IP-Adapter 参考图</text>
+            <rect x="450" y="70" width="160" height="60" rx="12" fill="#fef9c3"/><text x="530" y="95">权重平衡</text><text x="530" y="115" font-size="11" fill="#a16207">条件强度 / CFG</text>
+            <rect x="660" y="70" width="140" height="60" rx="12" fill="#ffffff" stroke="#c4b5fd"/><text x="730" y="95">扩散模型</text><text x="730" y="115" font-size="11" fill="#6d28d9">U-Net / DiT</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#a21)">
+            <path d="M170 44 C 300 44 300 85 445 90"/><path d="M170 100 H235"/><path d="M170 156 C 300 156 300 120 445 112"/><path d="M390 100 C 410 100 410 95 445 95"/><path d="M610 100 H655"/>
+        </g>
+        <defs><marker id="a21" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+    </svg>
+    <figcaption>多条件同时开启时，不同约束会相互争夺影响：结构控制过强会压制风格，参考图权重过高会抢提示词的语义。调试顺序见 21.6 节。</figcaption>
+</figure>
+
+<h2>21.1 可控生成的需求</h2>
 
         <p>可控生成要解决的核心问题可以概括为三个"指定"：</p>
 
@@ -71,7 +93,7 @@
             <tr><td>参考图风格迁移</td><td>IP-Adapter</td><td>中</td><td>否</td></tr>
         </table>
 
-        <h3>21.2 ControlNet 实战</h3>
+        <h2>21.2 ControlNet 实战</h2>
 
         <p>ControlNet（2023, Zhang et al.）的核心思想是：在不修改预训练模型权重的前提下，通过一个<strong>可训练的条件注入网络</strong>来控制生成过程。这个条件注入网络会锁定原始模型的所有参数，只训练一个并行的"副本"来接收条件输入（如骨架图、深度图）。</p>
 
@@ -124,7 +146,7 @@ result = pipe(
             <strong>💡 实战建议：</strong>ControlNet 的不同类型需要不同的条件预处理。OpenPose 需要用姿态检测模型（如 OpenPose 或 DWPose）提取骨架，Depth 需要用 MiDaS 或 Depth Anything 预测深度图，Scribble 则可以直接用用户的涂鸦作为输入。Diffusers 提供了 <code>controlnet_aux</code> 库来处理这些预处理。
         </div>
 
-        <h3>21.3 LoRA 微调</h3>
+        <h2>21.3 LoRA 微调</h2>
 
         <p>LoRA（Low-Rank Adaptation, 2021）最初是为大语言模型微调设计的，但它很快被引入到扩散模型社区并大放异彩。其核心思想是：<strong>用低秩矩阵分解来近似预训练权重的增量更新</strong>。</p>
 
@@ -178,7 +200,7 @@ pipe.save_lora_weights("my_style_lora.safetensors")</code></pre>
             <strong>⚠️ 真实踩坑——LoRA 训练数据准备：</strong>我第一次训练角色 LoRA 的时候，用了 50 张同一个动漫角色的图片。结果训练出来的 LoRA 无论如何都生成不出像样的角色——五官总是变形。排查后发现两个问题：第一，50 张图片中有 10 张是全身远景，面部只有几十个像素，这完全不够模型学习面部细节。第二，我没有做背景裁剪，大量背景噪声干扰了训练。最终我只选了 12 张高清面部特写（经过人工裁剪和对齐），重新训练后效果立竿见影。<strong>训练 LoRA 的第一原则：确保每张图片都清晰展示了你想学习的内容。</strong>
         </div>
 
-        <h3>21.4 IP-Adapter</h3>
+        <h2>21.4 IP-Adapter</h2>
 
         <p>IP-Adapter（2023, TencentARC）提供了一个不同于 LoRA 的"风格控制"思路：<strong>用参考图像而不是 prompt 来控制生成风格</strong>。它的核心机制是<strong>解耦交叉注意力（Decoupled Cross-Attention）</strong>。</p>
 
@@ -221,7 +243,7 @@ result = pipe(
             <strong>🌟 实战技巧：</strong>IP-Adapter + prompt + LoRA 三者叠加时，建议先单独确定每个工具的最优参数，再逐步叠加。一个常见的失败模式是：IP-Adapter 把参考图的色彩风格翻倍了，加上 LoRA 又把角色特征翻倍了，结果生成图像"两头都过"——既不像是参考图的风格，角色也变形了。我的经验公式是：叠加使用时，每个工具的控制强度降低到单独使用时的 60%-70%。
         </div>
 
-        <h3>21.5 多条件组合使用</h3>
+        <h2>21.5 多条件组合使用</h2>
 
         <p>实际项目中最常见的场景是多种控制条件同时使用。比如做一个"指定角色在指定场景中做指定姿势"的生成：</p>
 
@@ -259,7 +281,7 @@ result = pipe(
     num_inference_steps=25,
 ).images[0]</code></pre>
 
-        <h3>21.6 多条件冲突与解决方案</h3>
+        <h2>21.6 多条件冲突与解决方案</h2>
 
         <p>多条件组合使用最头疼的问题是<strong>条件冲突</strong>——ControlNet 要求人物举手，LoRA 要求人物是站姿，IP-Adapter 想带出参考图的坐姿特征。模型面对矛盾的信号会在中间值上"妥协"，结果就是关节扭曲或者风格混乱。</p>
 
@@ -281,12 +303,19 @@ result = pipe(
 
         <p>下一章，我们将从图像生成扩展到视频生成——看看 Sora、混元视频等前沿模型如何将 DiT 和 Flow Matching 的技术用于视频领域，以及文生视频面临的核心挑战。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Zhang et al., <em>Adding Conditional Control to Text-to-Image Diffusion Models</em>, 2023（ControlNet）. <a href="https://arxiv.org/abs/2302.05543">arXiv:2302.05543</a></li>
+    <li>Ye et al., <em>IP-Adapter: Text Compatible Image Prompt Adapter</em>, 2023. <a href="https://arxiv.org/abs/2308.06721">arXiv:2308.06721</a></li>
+    <li>Hu et al., <em>LoRA: Low-Rank Adaptation of Large Language Models</em>, 2021. <a href="https://arxiv.org/abs/2106.09685">arXiv:2106.09685</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="20.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="22.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

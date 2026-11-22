@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,36 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第23章 Diffusers框架深入</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第23章 Diffusers框架深入</h1>
 
         <p>大家好，我是你们的讲师。如果你在过去两年里用过 Stable Diffusion 做任何实际项目，那么你一定接触过 Hugging Face 的 Diffusers 库——它已经成为扩散模型生态中的"Linux 内核"。但大多数人对它的使用停留在调用 <code>StableDiffusionPipeline.from_pretrained()</code> 然后 <code>pipe()</code> 就完事了。一旦需要定制 Scheduler、加载 LoRA 权重、或者做图生图自定义 Pipeline，就很容易陷入"拆开源码看不懂，改一行报一堆错"的困境。</p>
 
         <p>这一章，我们要真正"拆"开 Diffusers。从三个核心组件（Pipeline、Model、Scheduler）出发，逐行剖析 StableDiffusionPipeline 的推理流程，深入理解 Scheduler 的数学接口，最后手撸一个自定义图生图 Pipeline。学完之后，你将具备随意拼装 Diffusers 模块的能力。</p>
 
-        <h3>23.1 三大核心组件概览</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f23t f23d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f23t">Diffusers 管线的组件分工</title>
+        <desc id="f23d">Pipeline 负责调度整个流程，Scheduler 决定每步噪声尺度与更新公式，Model（U-Net 或 Transformer）预测噪声，文本编码器与 VAE 分别处理条件与图像解码。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <rect x="300" y="70" width="220" height="60" rx="12" fill="#fef9c3"/><text x="410" y="95">Pipeline</text><text x="410" y="115" font-size="11" fill="#a16207">编排整个采样循环</text>
+        <g font-size="12" text-anchor="middle" fill="#1e1b4b">
+            <rect x="30" y="25" width="180" height="46" rx="10" fill="#e0f2fe"/><text x="120" y="53">Tokenizer + Text Encoder</text>
+            <rect x="30" y="128" width="180" height="46" rx="10" fill="#dcfce7"/><text x="120" y="156">VAE 编码器 / 解码器</text>
+            <rect x="610" y="25" width="180" height="46" rx="10" fill="#ede9fe"/><text x="700" y="53">Scheduler</text>
+            <rect x="610" y="90" width="180" height="46" rx="10" fill="#fee2e2"/><text x="700" y="118">Model（U-Net/DiT）</text>
+            <rect x="610" y="150" width="180" height="40" rx="10" fill="#e2e8f0"/><text x="700" y="175">其他组件（安全检查等）</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#a23)">
+            <path d="M210 50 C 260 50 270 80 296 88"/><path d="M210 150 C 260 150 270 120 296 112"/><path d="M520 88 C 560 80 570 50 605 48"/><path d="M520 100 H605"/><path d="M520 112 C 560 120 580 155 605 168"/>
+        </g>
+        <defs><marker id="a23" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+    </svg>
+    <figcaption>Diffusers 用“组件可替换”的设计把调度器、模型、编解码器解耦：同一个 Pipeline 换一个 Scheduler 或 Model 就能得到不同速度/质量的组合（见 23.3 与 23.4 节）。</figcaption>
+</figure>
+
+<h2>23.1 三大核心组件概览</h2>
 
         <p>Diffusers 库的设计哲学非常清晰：<strong>Pipeline 编排流程，Model 负责计算，Scheduler 控制步进</strong>。三者各司其职，通过标准接口组合在一起。</p>
 
@@ -64,7 +86,7 @@
             <strong>💡 理解三者的关系：</strong>Pipeline 就像一个餐厅的传菜流程，Model 是厨房里的大厨（负责最重的计算），Scheduler 是传菜员的节奏协调者（决定每一步怎么做）。三者可以独立替换——你可以换掉 Scheduler 而不改 Model，也可以换掉 Model 而不改 Pipeline 的编排逻辑。
         </div>
 
-        <h3>23.2 StableDiffusionPipeline 逐行拆解</h3>
+        <h2>23.2 StableDiffusionPipeline 逐行拆解</h2>
 
         <p>让我们写出一个"裸写"版本的推理循环，完全不用 <code>pipe()</code> 的封装，逐行理解每一步在干什么：</p>
 
@@ -117,7 +139,7 @@ image = (image / 2 + 0.5).clamp(0, 1).permute(0, 2, 3, 1).cpu().numpy()</code></
             <strong>🌟 核心洞察：</strong>Stable Diffusion 的推理循环中，U-Net 是绝对的计算瓶颈——它被调用了 <code>num_inference_steps</code> 次（比如 50 步），而 text encoder 和 VAE 只各调用了一次。这意味着推理优化的核心是减少 U-Net 调用次数（少步采样）或加速 U-Net 单次推理（量化 / TensorRT）。
         </div>
 
-        <h3>23.3 Scheduler 体系详解</h3>
+        <h2>23.3 Scheduler 体系详解</h2>
 
         <p>Scheduler 在 Diffusers 中是一个被严重低估的组件。很多同学以为 Scheduler 只是"怎么加噪声和去噪声"的数学公式，但实际上，不同类型的 Scheduler 实现了完全不同速度与质量的权衡：</p>
 
@@ -152,7 +174,7 @@ pipe.scheduler = DPMSolverMultistepScheduler.from_config(
             <strong>⚠️ 踩坑实录：</strong>在一次线上服务中，为了追求性能，我们把 Scheduler 从 DPMSolverMultistep 换成了 LCMScheduler。结果在 A/B 测试中用户反馈"生成质量明显下降，人脸出现不自然的纹理"。最终排查发现，我们只换了 Scheduler 却没有加载对应的 LCM-LoRA 权重——<strong>LCMScheduler 必须配合 LCM 蒸馏模型使用，单独换 Scheduler 只会导致调度步长与模型训练时不匹配，输出异常的噪声分布</strong>。这个教训让我深刻理解了一个原则：Scheduler 和 Model 是一对"舞伴"，它们的训练和推理必须使用相同的调度协议。
         </div>
 
-        <h3>23.4 自定义 Pipeline</h3>
+        <h2>23.4 自定义 Pipeline</h2>
 
         <p>当你需要做图生图（img2img）或 inpainting 时，最直接的做法是继承 <code>StableDiffusionPipeline</code> 并重写关键方法。Diffusers 提供了一组辅助 mixin 类来简化这个操作。下面是一个图生图 Pipeline 的自定义实现：</p>
 
@@ -217,7 +239,7 @@ class Img2ImgPipeline(StableDiffusionPipeline):
 
         <p>核心差异在第 2-4 步：img2img 不是从纯噪声开始，而是从输入图片的潜空间表示开始，加入一定量的噪声（由 <code>strength</code> 参数控制，0.75 表示混入 75% 噪声），然后用 U-Net 逐步去噪。strength 值越大，输出越偏离原图——当 strength=1.0 时，等价于文生图。</p>
 
-        <h3>23.5 LoRA 权重加载接口</h3>
+        <h2>23.5 LoRA 权重加载接口</h2>
 
         <p>Diffusers 从 0.19 版本开始提供了标准化的 LoRA 加载机制。理解它的正确用法是现代 AIGC 工程中必不可少的能力：</p>
 
@@ -247,7 +269,7 @@ pipe.fuse_lora(adapter_names=["style", "character"],
             <strong>💡 最佳实践：</strong>在批量推理场景中，如果多个请求需要不同的 LoRA 权重组合，不要反复调用 <code>fuse_lora()</code>——每 fuse 一次都会修改模型参数。更好的做法是使用 <code>unfuse_lora()</code> 撤销上一个融合，然后重新 fuse 新的权重组合。如果请求量极大，建议为每个 LoRA 组合维护独立的模型实例，避免热加载带来的显存抖动。
         </div>
 
-        <h3>23.6 实战踩坑：Diffusers 版本升级的血泪史</h3>
+        <h2>23.6 实战踩坑：Diffusers 版本升级的血泪史</h2>
 
         <p>这是我在 2024 年一个真实项目中亲历的惨痛教训。我们的生产服务基于 Diffusers 0.24 版本稳定运行了半年。某天团队决定升级到 0.30 以支持 SDXL Turbo 和新的 Scheduler API。结果升级后，之前正常的生成结果全部<strong>偏暗</strong>，色彩饱和度明显不同。</p>
 
@@ -275,12 +297,18 @@ pipe.fuse_lora(adapter_names=["style", "character"],
 
         <p>好的，我们已经深入拆解了 Diffusers 框架的三大核心组件、Pipeline 逐行推理流程、Scheduler 切换、自定义 Pipeline 以及 LoRA 加载的最佳实践。下一章我们将从<strong>代码视角切换到可视化视角</strong>，学习 ComfyUI——这个通过节点编程彻底改变了 AIGC 工作流设计的工具。ComfyUI 背后的设计思想和 Diffusers 实际上是同一枚硬币的两面，理解了这一章的内容，下一章你会学得飞快。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+    <li>Peebles &amp; Xie, <em>Scalable Diffusion Models with Transformers</em>, 2023. <a href="https://arxiv.org/abs/2212.09748">arXiv:2212.09748</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="22.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="24.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
