@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,39 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第6章 自回归生成模型</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第6章 自回归生成模型</h1>
 
         <p>大家好，我是你们的讲师。前面两章我们看的 GAN 家族是"隐式"生成模型——它们不显式定义概率分布，而是通过对抗训练来逼近真实分布。这一章我们要看的<strong>自回归模型</strong>（Autoregressive Models）走的是另一条路：<strong>显式计算数据的概率分布</strong>，把联合概率分解为条件概率的连乘。</p>
 
         <p>你可能觉得"条件概率连乘"是个数学上很朴素的思想，但它在 NLP 中催生了 GPT 系列、在图像中催生了 PixelCNN，更在 2025-2026 年迎来了一个重要的复兴——Emu3、OmniGen-AR 等模型证明"next-token prediction"可以统一图像、视频和文本的生成与理解。这个趋势可能会深刻影响未来五年 AIGC 的格局。</p>
 
-        <h3>6.1 自回归生成的基本思想</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f6t f6d" viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
+        <title id="f6t">自回归的链式分解</title>
+        <desc id="f6d">联合分布被分解为逐项条件概率的乘积，每个位置的预测都以之前所有位置为条件，因此生成必须串行进行。</desc>
+        <rect width="820" height="190" rx="16" fill="#faf8ff"/>
+        <g font-size="15" text-anchor="middle" fill="#1e1b4b">
+            <rect x="40" y="55" width="90" height="56" rx="12" fill="#ede9fe"/><text x="85" y="89">x₁</text>
+            <rect x="180" y="55" width="90" height="56" rx="12" fill="#e0f2fe"/><text x="225" y="89">x₂</text>
+            <rect x="320" y="55" width="90" height="56" rx="12" fill="#dcfce7"/><text x="365" y="89">x₃</text>
+            <rect x="460" y="55" width="90" height="56" rx="12" fill="#fef9c3"/><text x="505" y="89">…</text>
+            <rect x="600" y="55" width="90" height="56" rx="12" fill="#ffe4e6"/><text x="645" y="82">x_T</text><text x="645" y="100" font-size="11" fill="#be123c">下一个 token</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" marker-end="url(#a6)">
+            <path d="M130 83 H175"/><path d="M270 83 H315"/><path d="M410 83 H455"/><path d="M550 83 H595"/>
+        </g>
+        <g stroke="#d06d4d" stroke-width="2" stroke-dasharray="5 4" fill="none">
+            <path d="M85 111 C 85 160 645 160 645 111"/><path d="M225 111 C 225 145 645 145 645 111"/>
+        </g>
+        <defs><marker id="a6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="182" font-size="12" fill="#7f1d1d" text-anchor="middle">橙色虚线：每个位置都依赖它之前的全部位置（因果条件）</text>
+    </svg>
+    <figcaption>自回归把 p(x) 写成条件概率的连乘 p(x)=∏ₜ p(xₜ | x₁…xₜ₋₁)，训练可并行（教师强制），但生成必须从左到右串行，这也是它相比扩散的推理速度劣势来源。</figcaption>
+</figure>
+
+<h2>6.1 自回归生成的基本思想</h2>
 
         <p>自回归模型的核心思想非常简洁：<strong>将联合概率分布分解为条件概率的连乘</strong>。</p>
 
@@ -67,7 +92,7 @@
             <strong>🌟 核心洞察：</strong>自回归模型和扩散模型的根本区别在于"生成顺序"。自回归是<strong>顺序生成</strong>（从左到右），扩散模型是<strong>迭代精炼</strong>（从噪声到样本）。这种区别导致了它们在速度和灵活性上的不同取舍。
         </div>
 
-        <h3>6.2 PixelCNN：逐像素生成图像</h3>
+        <h2>6.2 PixelCNN：逐像素生成图像</h2>
 
         <p>把自回归思想用在图像上有一个直接的挑战：图像是二维的，像素之间的依赖关系是空间性的而非序列性的。PixelCNN（van den Oord et al., 2016）用了一个聪明的办法——<strong>掩码卷积</strong>（Masked Convolution）。</p>
 
@@ -94,7 +119,7 @@ Mask B（后续层用）：
             <tr><td>Image Transformer</td><td>2018</td><td>自注意力替代卷积</td><td>慢</td><td>Transformer 引入图像生成</td></tr>
         </table>
 
-        <h3>6.3 Transformer 解码器架构</h3>
+        <h2>6.3 Transformer 解码器架构</h2>
 
         <p>2017 年 Transformer 的提出彻底改变了自回归模型的格局。Transformer 解码器中的<strong>因果掩码</strong>（Causal Masking）完美地实现了自回归约束：</p>
 
@@ -120,7 +145,7 @@ Mask B（后续层用）：
             <strong>💡 视觉自回归的两个关键问题：</strong>（1）图像怎么变成序列？Image GPT 和 VQGAN 的做法是把图像量化成离散 token（类似 codebook 中的编号），然后用这些 token 的序列做自回归。（2）选择什么顺序？光栅扫描（raster scan）是最常用的——从左上角到右下角逐行生成。但理论上任何顺序都可以，不同的顺序会影响生成质量。
         </div>
 
-        <h3>6.4 非自回归生成（NAR）</h3>
+        <h2>6.4 非自回归生成（NAR）</h2>
 
         <p>自回归生成的最大痛点是<strong>生成速度</strong>——因为是串行的，生成一篇 2048 个 token 的文章需要 2048 次推理。对于实时应用，这显然不够。</p>
 
@@ -136,7 +161,7 @@ Mask B（后续层用）：
             <strong>🌟 核心洞察：</strong>NAR 的思想和扩散模型有异曲同工之妙。扩散模型本质上也是一个"迭代精炼"的过程——从纯噪声开始，逐步去噪到清晰图像。把自回归的串行生成和扩散的迭代精炼结合起来，是 2025-2026 年的重要研究方向之一。
         </div>
 
-        <h3>6.5 自回归 vs 扩散的对比</h3>
+        <h2>6.5 自回归 vs 扩散的对比</h2>
 
         <p>这是一个在 2025-2026 年被反复讨论的话题。两种范式各有优劣：</p>
 
@@ -152,7 +177,7 @@ Mask B（后续层用）：
 
         <p>实际选择取决于场景：做聊天机器人 → 自回归（GPT 系）；做文生图 → 扩散模型（SD 系）；做统一多模态理解和生成 → 自回归（Emu3 系）在 2026 年看起来更有优势。</p>
 
-        <h3>6.6 2025-2026 趋势：自回归的复兴</h3>
+        <h2>6.6 2025-2026 趋势：自回归的复兴</h2>
 
         <p>2024 年底到 2026 年，自回归模型在视觉生成领域经历了一场"复兴"：</p>
 
@@ -175,12 +200,18 @@ Mask B（后续层用）：
 
         <p>从下一章开始，我们的视角会稍微转一下——不再讨论某个具体的生成模型，而是讨论一个非常实用的主题：<strong>如何评估生成质量</strong>。无论是 VAE、GAN、扩散模型还是自回归模型，你最终都需要回答一个问题：我生成的样本到底好不好？第 7 章将介绍 IS、FID、CLIP Score 等指标的优劣和正确使用方法。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>van den Oord et al., <em>Pixel Recurrent Neural Networks</em>, 2016. <a href="https://arxiv.org/abs/1601.06759">arXiv:1601.06759</a></li>
+    <li>Vaswani et al., <em>Attention Is All You Need</em>, 2017（Transformer 解码器）. <a href="https://arxiv.org/abs/1706.03762">arXiv:1706.03762</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="05.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="07.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

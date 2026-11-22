@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,33 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第5章 GAN的演进</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第5章 GAN的演进</h1>
 
         <p>大家好，我是你们的讲师。第 4 章我们详细拆解了原始 GAN 的数学机理和训练痛点，你可能觉得"这玩意儿也太难训了"。确实如此——但正是这些问题推动了 GAN 家族在 2014-2021 年间的一场轰轰烈烈的进化。从 DCGAN 的工业级可用，到 WGAN 的数学革命，再到 StyleGAN 的艺术级生成能力，每一篇经典论文都在解决前一版本遗留的一个核心问题。</p>
 
         <p>这一章我们沿着 GAN 的进化树一路梳理：每一步改进了什么？为什么改？效果如何？最后，我们会讨论一个所有同学都会问的问题——如果 GAN 这么强，为什么 2022 年后扩散模型取代了它的主流地位？</p>
 
-        <h3>5.1 DCGAN：让 GAN 真正可用</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f5t f5d" viewBox="0 0 820 150" xmlns="http://www.w3.org/2000/svg">
+        <title id="f5t">GAN 家族的关键里程碑</title>
+        <desc id="f5d">从 DCGAN 的卷积化，到条件生成、WGAN-GP 的稳定化，再到 StyleGAN 的尺度风格解耦与 BigGAN 的大规模训练，GAN 逐代解决稳定性与分辨率问题。</desc>
+        <rect width="820" height="150" rx="16" fill="#faf8ff"/>
+        <path d="M115 75 H160 M275 75 H320 M435 75 H480 M595 75 H640" stroke="#8b5cf6" stroke-width="4" marker-end="url(#a5)"/>
+        <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="20" y="45" width="95" height="60" rx="12" fill="#ede9fe"/><text x="67" y="70">DCGAN</text><text x="67" y="88" font-size="11" fill="#6d28d9">2015 卷积化</text>
+            <rect x="180" y="45" width="95" height="60" rx="12" fill="#e0f2fe"/><text x="227" y="70">cGAN</text><text x="227" y="88" font-size="11" fill="#0369a1">类别/文本控制</text>
+            <rect x="340" y="45" width="95" height="60" rx="12" fill="#dcfce7"/><text x="387" y="70">WGAN-GP</text><text x="387" y="88" font-size="11" fill="#15803d">训练稳定化</text>
+            <rect x="500" y="45" width="95" height="60" rx="12" fill="#fef9c3"/><text x="547" y="70">StyleGAN</text><text x="547" y="88" font-size="11" fill="#a16207">风格解耦</text>
+            <rect x="660" y="45" width="110" height="60" rx="12" fill="#ffe4e6"/><text x="715" y="70">BigGAN</text><text x="715" y="88" font-size="11" fill="#be123c">大规模高质量</text>
+        </g>
+    </svg>
+    <figcaption>每一代都针对上一代的短板：卷积结构（DCGAN）→ 条件控制（cGAN）→ 损失与梯度稳定（WGAN-GP）→ 属性解耦（StyleGAN）→ 规模扩展（BigGAN）。年份为各工作的公开时间。</figcaption>
+</figure>
+
+<h2>5.1 DCGAN：让 GAN 真正可用</h2>
 
         <p>2015 年，Radford 等人提出了 DCGAN（Deep Convolutional GAN），它严格意义上不是创新架构，而是<strong>一套确保 GAN 稳定训练的工程最佳实践</strong>：</p>
 
@@ -65,7 +84,7 @@
             <strong>💡 DCGAN 的贡献：</strong>它没有改变 GAN 的数学框架，但第一次让 GAN 可以在 ImageNet 级别的数据集上稳定训练出有意义的生成结果。DCGAN 的潜空间还展示了惊人的语义插值能力——"戴眼镜的男人"和"不戴眼镜的女人"之间的平滑过渡完全可以做到。
         </div>
 
-        <h3>5.2 Conditional GAN（cGAN）</h3>
+        <h2>5.2 Conditional GAN（cGAN）</h2>
 
         <p>原始 GAN 生成的图像是<strong>无条件的</strong>——给定随机噪声 z，输出一张图像，你无法控制它"是什么"。cGAN（Conditional GAN）的改进非常简单但实用：<strong>向 G 和 D 同时注入条件信息 y</strong>（比如类别标签：猫、狗、车）。</p>
 
@@ -82,7 +101,7 @@ Conditional GAN:
 
         <p>标签 y 通过嵌入层（Embedding）转成向量后，在 G 和 D 的输入层与特征拼接。这一微小的改动开启了可控生成的大门——你可以指定生成的类别了。</p>
 
-        <h3>5.3 WGAN 与 WGAN-GP</h3>
+        <h2>5.3 WGAN 与 WGAN-GP</h2>
 
         <p>这是 GAN 演进史上最重要的理论突破。WGAN（Wasserstein GAN, 2017）的出发点是：<strong>JS 散度在高维空间中存在本质缺陷</strong>。</p>
 
@@ -118,7 +137,7 @@ Conditional GAN:
             <strong>🌟 核心洞察：</strong>WGAN 的数学贡献远超 GAN 领域——它告诉我们：损失函数的设计决定了优化问题的"地形"。JS 散度的地形是"高原+悬崖"（远离最优解时梯度消失），Wasserstein 距离的地形是"缓坡"（处处有梯度）。这个问题在扩散模型中也被以不同的方式处理了——但核心思想相通。
         </div>
 
-        <h3>5.4 StyleGAN 系列</h3>
+        <h2>5.4 StyleGAN 系列</h2>
 
         <p>如果说 WGAN 解决了训练的稳定性问题，StyleGAN（Karras et al., 2019）解决的是<strong>生成质量和解耦控制</strong>的问题。StyleGAN 引入了几项革命性设计：</p>
 
@@ -137,7 +156,7 @@ Conditional GAN:
             <tr><td>StyleGAN-XL</td><td>2022</td><td>大规模 + 分类器指导</td><td>ImageNet 上达到扩散模型水平</td></tr>
         </table>
 
-        <h3>5.5 BigGAN 与大规模 GAN 训练</h3>
+        <h2>5.5 BigGAN 与大规模 GAN 训练</h2>
 
         <p>2019 年 DeepMind 的 BigGAN 证明了一个简单的规律：<strong>更大 → 更好</strong>。通过极致地扩展模型规模（参数从几千万到 1.6 亿）和 batch size（2048！），BigGAN 在 ImageNet 128×128 上达到了当时最先进的 IS（Inception Score）。</p>
 
@@ -152,7 +171,7 @@ Conditional GAN:
             <strong>⚠️ 一个真实的踩坑故事：</strong>2020 年我在复现 BigGAN 时发现，我的 4×V100 机器根本跑不动 2048 的 batch size。退而求其次用 256 的 batch size 训练，结果 FID 比论文结果差了 3 倍。我花了两个星期调 learning rate、模型深度和各种超参数——都没有显著改善。最后我去翻了论文的附录，发现 BigGAN 使用了一种叫"Ghost BatchNorm"的技巧：先用大 batch 算 BN 统计量再用小 batch 训练。加了之后，FID 立刻下降了 40%。<strong>这个教训告诉我的：复现 SOTA 论文时，光是"大体思路对"远不够，细节往往是决定性因素。</strong>
         </div>
 
-        <h3>5.6 GAN 的现状与局限：为什么不香了？</h3>
+        <h2>5.6 GAN 的现状与局限：为什么不香了？</h2>
 
         <p>站在 2026 年回看，GAN 的巅峰是 2019-2021 年（StyleGAN2/BigGAN 时代）。2022 年 Stable Diffusion 开源后，扩散模型迅速取代 GAN 成为图像生成的主流范式。原因不是 GAN 不好，而是扩散模型在几个关键维度上更优：</p>
 
@@ -181,12 +200,19 @@ Conditional GAN:
 
         <p>下一章，我们将走进自回归生成的世界——从 PixelCNN 的逐像素生成到 Transformer 解码器的因果注意力，再到 2025-2026 年 Emu3 和 OmniGen-AR 掀起的"自回归复兴"运动。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Radford et al., <em>Unsupervised Representation Learning with DCGAN</em>, 2015. <a href="https://arxiv.org/abs/1511.06434">arXiv:1511.06434</a></li>
+    <li>Arjovsky et al., <em>Wasserstein GAN</em>, 2017. <a href="https://arxiv.org/abs/1701.07875">arXiv:1701.07875</a></li>
+    <li>Karras et al., <em>A Style-Based Generator Architecture for GANs</em>, 2018. <a href="https://arxiv.org/abs/1812.04948">arXiv:1812.04948</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="04.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="06.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,44 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第8章 DDPM扩散数学理论</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第8章 DDPM扩散数学理论</h1>
 
         <p>大家好，我是你们的讲师。如果你在过去两年里用过 Stable Diffusion 或 Midjourney，你可能已经惊叹于扩散模型惊人的生成能力。但有没有想过一个问题：为什么往图像上"撒噪声"然后再"擦掉噪声"，就能生成一张全新的、高质量的图片？这背后的数学原理到底是什么？</p>
 
         <p>这一章，我们将深入 DDPM（Denoising Diffusion Probabilistic Models）的数学内核。这将是整个教程中数学密度最高的一章——但我会用直觉和可视化来帮助你理解每一个公式。理解 DDPM 的数学是掌握后续所有扩散模型变体（DDIM、LDM、Stable Diffusion、DiT、FLUX）的基石。你不需要一次看懂所有推导，但请务必理解<strong>核心思想</strong>和<strong>关键公式的物理含义</strong>。</p>
 
-        <h3>8.1 扩散模型的核心直觉</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f8t f8d" viewBox="0 0 820 210" xmlns="http://www.w3.org/2000/svg">
+        <title id="f8t">DDPM 的前向加噪与反向去噪过程</title>
+        <desc id="f8d">前向过程按固定调度逐步向数据 x0 添加高斯噪声，直至接近纯噪声 xT；反向过程训练一个网络逐步预测并去除噪声，从噪声恢复出样本。</desc>
+        <rect width="820" height="210" rx="16" fill="#faf8ff"/>
+        <g font-size="15" text-anchor="middle" fill="#1e1b4b">
+            <rect x="40" y="50" width="100" height="56" rx="12" fill="#ede9fe"/><text x="90" y="84">x₀</text>
+            <rect x="240" y="50" width="100" height="56" rx="12" fill="#e0f2fe"/><text x="290" y="84">x₁</text>
+            <rect x="440" y="50" width="100" height="56" rx="12" fill="#fef9c3"/><text x="490" y="84">…</text>
+            <rect x="640" y="50" width="100" height="56" rx="12" fill="#e2e8f0"/><text x="690" y="84">x_T</text>
+        </g>
+        <g stroke="#d06d4d" stroke-width="4" marker-end="url(#fwd)">
+            <path d="M140 66 H235"/><path d="M340 66 H435"/><path d="M540 66 H635"/>
+        </g>
+        <g stroke="#147f80" stroke-width="4" marker-end="url(#rev)">
+            <path d="M640 92 H545"/><path d="M440 92 H345"/><path d="M240 92 H145"/>
+        </g>
+        <defs>
+            <marker id="fwd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#d06d4d"/></marker>
+            <marker id="rev" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#147f80"/></marker>
+        </defs>
+        <text x="410" y="38" font-size="12" fill="#7f1d1d" text-anchor="middle">前向 q(xₜ|xₜ₋₁)：加噪（无参数，公式固定）</text>
+        <text x="410" y="130" font-size="12" fill="#0f766e" text-anchor="middle">反向 pθ(xₜ₋₁|xₜ)：学习去噪（可训练的网络）</text>
+        <text x="410" y="175" font-size="12" fill="#334155" text-anchor="middle">训练目标：每一步预测所加的噪声 ε，化为简单的 MSE 损失 L_simple（见 8.4 节）</text>
+        <text x="410" y="198" font-size="11" fill="#64748b" text-anchor="middle">教学示意：实际调度通常用 T=1000 步线性/余弦 β 方案</text>
+    </svg>
+    <figcaption>前向过程是固定的马尔可夫加噪链，反向过程则用神经网络学习去噪。网络不直接预测 x，而是预测每步注入的噪声 ε，这是 DDPM 损失简化的关键。</figcaption>
+</figure>
+
+<h2>8.1 扩散模型的核心直觉</h2>
 
         <p>扩散模型的思想可以用一句话概括：<strong>如果你能学会如何系统地往数据上加噪声，你就能学会如何逆向地去噪并生成全新的数据。</strong></p>
 
@@ -61,7 +91,7 @@
             <strong>🌟 核心洞察：</strong>扩散模型把"生成"这个极其复杂的任务分解成了 T 个简单的去噪子步骤。每一步的任务都非常简单："从当前这个含噪图像中去除一点点噪声。"这种渐进式分解使得训练变得非常稳定——这正是它相比 GAN 的最大优势。
         </div>
 
-        <h3>8.2 前向过程（Forward Process）</h3>
+        <h2>8.2 前向过程（Forward Process）</h2>
 
         <p>前向过程是一个固定方差的 Markov 链。给定一个数据样本 x₀ ∼ q(x)（比如一张真实图片），我们在 T 步内逐步添加高斯噪声，得到一系列潜变量 x₁, x₂, ..., x_T。</p>
 
@@ -83,7 +113,7 @@
 
         <p>这个"一步到位的公式"非常关键——它让我们在训练时不需要逐步迭代，可以直接在任意时间步 t 计算含噪图像 x_t 和噪声 ε 之间的关系，从而高效地训练去噪网络。</p>
 
-        <h3>8.3 反向过程（Reverse Process）</h3>
+        <h2>8.3 反向过程（Reverse Process）</h2>
 
         <p>反向过程是我们真正"学习"的部分。目标是学习一个神经网络 p_θ(x_{t-1} | x_t)，使得它能逆转前向过程的每一步。</p>
 
@@ -106,7 +136,7 @@
             <strong>💡 直觉理解：</strong>反向过程的学习目标本质上就是"预测噪声 ε 从 x_t 中减去"。把 x_t = √(ᾱ_t) · x_0 + √(1 - ᾱ_t) · ε 代入 μ̃_t 的公式，你会发现 μ̃_t 可以重写为 x_t 减去"某个噪声量"的形式——而这个噪声量正是模型需要预测的。
         </div>
 
-        <h3>8.4 损失函数推导：从 VLB 到 L_simple</h3>
+        <h2>8.4 损失函数推导：从 VLB 到 L_simple</h2>
 
         <p>DDPM 的训练通过优化"变分下界"（Variational Lower Bound, VLB）来进行。VLB 是数据对数似然的下界，最大化似然等价于最小化负对数似然的上界：</p>
 
@@ -134,7 +164,7 @@
             <strong>🌟 核心洞察：</strong>L_simple 的形式简单到令人惊讶——它就是一个噪声预测的 MSE。但它的数学推导过程包含了"变分推断、KL 散度化简、重参数化"等一系列深刻思想。这就是 DDPM 的优雅之处：<strong>复杂的数学推导最终导向一个极其简单的训练目标</strong>。
         </div>
 
-        <h3>8.5 噪声调度策略</h3>
+        <h2>8.5 噪声调度策略</h2>
 
         <p>β_t 的调度方式（即每一步加多少噪声）对生成质量有显著影响。几种主流的调度策略对比：</p>
 
@@ -152,7 +182,7 @@
             <strong>💡 实践建议：</strong>如果你从头训练一个扩散模型，建议使用余弦调度作为起点。如果你在 Hugging Face Diffusers 中使用预训练模型，调度器会随模型权重一起提供，通常不需要你手动配置。
         </div>
 
-        <h3>8.6 DDPM 的生成效果与采样速度的矛盾</h3>
+        <h2>8.6 DDPM 的生成效果与采样速度的矛盾</h2>
 
         <p>DDPM 在 2020 年刚提出时，生成质量令人惊叹——在 CIFAR-10、LSUN 等数据集上取得了当时最好的 FID 分数。但它有一个致命问题：<strong>推理速度极慢</strong>。</p>
 
@@ -176,12 +206,19 @@
 
         <p>下一章，我们将首先看 DDIM、LDM（潜在扩散模型）和层级式扩散——它们在不牺牲太多质量的条件下，大幅提升了扩散模型的效率和实用性。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Ho et al., <em>Denoising Diffusion Probabilistic Models</em>, NeurIPS 2020. <a href="https://arxiv.org/abs/2006.11239">arXiv:2006.11239</a></li>
+    <li>Sohl-Dickstein et al., <em>Deep Unsupervised Learning using Nonequilibrium Thermodynamics</em>, 2015. <a href="https://arxiv.org/abs/1503.03585">arXiv:1503.03585</a></li>
+    <li>Song &amp; Ermon, <em>Generative Modeling by Estimating Gradients of the Data Distribution</em>, 2019（噪声条件得分匹配）. <a href="https://arxiv.org/abs/1907.05600">arXiv:1907.05600</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="07.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="09.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
