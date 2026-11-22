@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,35 @@
             <li><a href="27.html" class="active">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第27章 实时生成新范式</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第27章 实时生成新范式</h1>
 
         <p>大家好，我是你们的讲师。想象一个场景：你在视频会议中，背景是杂乱的卧室，你点击一下"AI 虚拟背景"，画面瞬间切换成高级会议室——延迟低于 50 毫秒，流畅度 60fps。或者你在玩开放世界游戏，AI 实时生成下一个关卡的场景和 NPC，完全不存在加载画面。这些场景的共同需求是：<strong>生成必须实时</strong>。</p>
 
         <p>经典的扩散模型需要 20-50 步去噪才能得到一张说得过去的图像。即便用了 DPM-Solver 加速到 10 步，在消费级 GPU 上每步仍需要 50-100ms——这意味着 0.5 秒以上的延迟，远达不到实时（<100ms）的要求。这一章，我们来看 2025-2026 年涌现的<strong>实时生成新范式</strong>：一致性模型（Consistency Models）、蒸馏技术，以及一步生成。</p>
 
-        <h3>27.1 实时生成的需求场景</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f27t f27d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f27t">实时生成范式与多步扩散的步数对比</title>
+        <desc id="f27d">传统扩散需要几十步迭代去噪，LCM/一致性蒸馏把步数降到数步，sCM 进一步用极少步数完成生成，牺牲部分多样性换取实时性。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="12" fill="#1e1b4b">
+            <text x="25" y="55">扩散（DDPM/DDIM）</text>
+            <g fill="#e0f2fe"><rect x="230" y="40" width="18" height="20" rx="3"/><rect x="252" y="40" width="18" height="20" rx="3"/><rect x="274" y="40" width="18" height="20" rx="3"/><rect x="296" y="40" width="18" height="20" rx="3"/></g><text x="560" y="55" fill="#0369a1">约 20–50 步</text>
+            <text x="25" y="105">LCM / 一致性蒸馏</text>
+            <g fill="#dcfce7"><rect x="230" y="90" width="18" height="20" rx="3"/><rect x="252" y="90" width="18" height="20" rx="3"/><rect x="274" y="90" width="18" height="20" rx="3"/><rect x="296" y="90" width="18" height="20" rx="3"/></g><text x="560" y="105" fill="#15803d">约 4 步</text>
+            <text x="25" y="155">sCM 连续时间一致性</text>
+            <g fill="#ffe4e6"><rect x="230" y="140" width="18" height="20" rx="3"/><rect x="252" y="140" width="18" height="20" rx="3"/></g><text x="560" y="155" fill="#be123c">约 2 步</text>
+        </g>
+        <g stroke="#cbd5e1" stroke-width="2"><path d="M225 30 V170"/><path d="M310 30 V170"/></g>
+        <text x="410" y="185" font-size="11" fill="#7f1d1d" text-anchor="middle">教学示意：步数为典型公开配置，实际取决于分辨率、模型与质量要求</text>
+        <text x="410" y="26" font-size="12" fill="#334155" text-anchor="middle">步数越少，单张延迟越低，但细节与多样性通常需要重新权衡</text>
+    </svg>
+    <figcaption>实时生成把“迭代去噪”重构成“少量大步”甚至“一步到位”。对交互式应用（实时绘画、视频通话）而言，延迟从秒级降到亚秒级是产品化的前提。</figcaption>
+</figure>
+
+<h2>27.1 实时生成的需求场景</h2>
 
         <p>"实时"在不同场景下有不同的定义，但大致可以分为三个层级：</p>
 
@@ -62,7 +83,7 @@
 
         <p>传统的 50 步扩散模型连第一级都够呛——单张 512×512 图像在 RTX 4090 上需要 2-3 秒。要在消费级硬件上达到毫秒级的延迟，唯一的出路是<strong>大幅减少推理步数，甚至一步到位</strong>。</p>
 
-        <h3>27.2 sCM：两步生成替代 50 步扩散</h3>
+        <h2>27.2 sCM：两步生成替代 50 步扩散</h2>
 
         <p>sCM（Simplified Consistency Model）是 OpenAI 在 2025 年发表的工作，后来被用于 Sora 2 的实时视频生成。它的核心思想极其优雅：<strong>把扩散模型的概率流 ODE（Probability Flow ODE）的学习目标简化到极致，使得模型可以在 1-2 步内完成生成</strong>。</p>
 
@@ -80,7 +101,7 @@
             <strong>🌟 核心洞察：</strong>sCM 最重要的贡献不是技术细节，而是它证明了"蒸馏知识"的效率上限——一个训练充分的扩散教师模型，其学到的数据分布可以通过蒸馏被压缩到 2 步推理中，且质量损失仅为 5-10%（以 FID 计）。这意味着实时生成的"圣杯"已经触手可及。
         </div>
 
-        <h3>27.3 一致性蒸馏：让教师模型教学生"一步到位"</h3>
+        <h2>27.3 一致性蒸馏：让教师模型教学生"一步到位"</h2>
 
         <p>一致性蒸馏（Consistency Distillation, CD）是比 sCM 更通用的框架。它的训练流程如下：</p>
 
@@ -115,7 +136,7 @@ for x0, cond in dataloader:
             <strong>⚠️ 一个真实的踩坑故事：</strong>2025 年我在尝试用一致性蒸馏把 FLUX.1-dev 蒸馏为 4 步模型时，遇到了严重的"色彩偏移"问题——生成的图像整体偏绿。花了一周调试才发现罪魁祸首是教师模型的输出格式判断失误：FLUX 使用的是 rectified flow 而非标准扩散，其噪声调度和输出格式与 DDPM 完全不同。直接用标准扩散的一致性蒸馏脚本会导致教师预测值解析错误。最终我不得不手写了针对 rectified flow 的蒸馏适配层。这个教训是：<strong>蒸馏脚本和教师模型必须严格匹配，不能盲目套用开源代码</strong>。
         </div>
 
-        <h3>27.4 LCM：Stable Diffusion 的几步蒸馏</h3>
+        <h2>27.4 LCM：Stable Diffusion 的几步蒸馏</h2>
 
         <p>LCM（Latent Consistency Model）是 2024 年诞生的重要工作，专门针对 Stable Diffusion 系列进行了蒸馏优化。它结合了 consistency distillation 和 LoRA 技术，在消费级 GPU 上实现了<strong>SDXL 的 4 步推理</strong>。</p>
 
@@ -128,7 +149,7 @@ for x0, cond in dataloader:
 
         <p>LCM 在实际使用中的体验令人印象深刻：原本需要 20 步的 SDXL 生成，加载 LCM-LoRA 后 4 步就能得到可接受的结果。但要注意，<strong>4 步生成的质量仍然无法和 20 步相提并论</strong>——尤其是人脸细节和文字渲染方面，差距明显。</p>
 
-        <h3>27.5 Adversarial Diffusion Distillation（ADD）</h3>
+        <h2>27.5 Adversarial Diffusion Distillation（ADD）</h2>
 
         <p>前面提到的一致性蒸馏追求的是"偏差最小化"——让学生模型和教师模型的输出尽可能接近。但这种纯回归目标有一个根本缺陷：<strong>回归到均值</strong>。当教师模型的输出分布具有多模态性时（比如同一个 prompt 对应的多种合理图像），回归损失会迫使学生学习"平均结果"，导致生成的图像模糊、缺乏多样性。</p>
 
@@ -141,7 +162,7 @@ for x0, cond in dataloader:
 
         <p>这种混合方法的效果立竿见影：在 SD 1.5 上经过 ADD 蒸馏后，1 步生成的结果在 FID 和 CLIP score 上可以媲美原始模型的 50 步生成。代价是训练更复杂——需要一个额外的判别器，且 GAN 训练的稳定性问题也会传染到蒸馏过程中。</p>
 
-        <h3>27.6 一步生成模型对比</h3>
+        <h2>27.6 一步生成模型对比</h2>
 
         <table>
             <tr><th>模型/方法</th><th>推理步数</th><th>基座模型</th><th>核心机制</th><th>FID↓ (COCO 30k)</th><th>训练复杂度</th></tr>
@@ -160,7 +181,7 @@ for x0, cond in dataloader:
             <li><strong>蒸馏有天花板：</strong>所有蒸馏模型距离教师模型的质量都有一定差距，尤其在高频细节和多样性方面</li>
         </ul>
 
-        <h3>27.7 真实踩坑：蒸馏模型的图像质量与多样性 tradeoff</h3>
+        <h2>27.7 真实踩坑：蒸馏模型的图像质量与多样性 tradeoff</h2>
 
         <p>这里我想分享一个 2025 年底的真实项目经历。我们团队为一个电商客户构建了实时商品图生成服务，使用 LCM 将生成时间从 2.5 秒降到了 0.3 秒。上线后的 A/B 测试结果让我们大跌眼镜：</p>
 
@@ -182,12 +203,19 @@ for x0, cond in dataloader:
 
         <p>实时生成是 AIGC 走向大规模产品化的关键瓶颈。从 sCM 到 LCM 再到 ADD，我们看到蒸馏技术的不断进化——从纯回归蒸馏到对抗蒸馏，从像素空间到潜空间，从固定步数到自适应步数。但正如我们的踩坑故事所示，<strong>速度不是唯一的指标</strong>，质量、多样性和稳定性缺一不可。下一章，我们将用前面所有 27 章的知识，完成一个从模型选型到部署上线的完整文生图服务——这是本教程的最终综合项目。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Song et al., <em>Consistency Models</em>, 2023. <a href="https://arxiv.org/abs/2303.01469">arXiv:2303.01469</a></li>
+    <li>Luo et al., <em>Latent Consistency Models: Synthesizing High-Resolution Images with Few-Step Inference</em>, 2023（LCM）. <a href="https://arxiv.org/abs/2310.04378">arXiv:2310.04378</a></li>
+    <li>Lu &amp; Song, <em>Simplifying, Stabilizing and Scaling Continuous-Time Consistency Models</em>, 2024（sCM）. <a href="https://arxiv.org/abs/2410.11081">arXiv:2410.11081</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="26.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="28.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

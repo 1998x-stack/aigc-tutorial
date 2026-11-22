@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,35 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第25章 模型部署与服务化</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第25章 模型部署与服务化</h1>
 
         <p>大家好，我是你们的讲师。前两章我们分别从代码视角和可视化视角学习了如何构建扩散模型推理管线。但一个残酷的现实是：<strong>能跑通和能上线是两回事</strong>。在 Jupyter Notebook 里生成一张猫图需要 3 秒钟，大家觉得"好快"；但如果在线上服务里一个请求需要 3 秒响应时间，加上排队和并发——算下来单卡 A100 可能每秒只能服务 2-3 个请求，吞吐量完全不够看。</p>
 
         <p>这一章，我们将走完整条部署链路：从模型导出（PyTorch → ONNX → TensorRT）、推理优化（量化 / Torch Compile / 动态批处理）、到 API 服务工程设计（FastAPI + 请求排队 + 异步任务）。最后，我会分享一个真实踩坑案例——生产环境中的显存泄漏排查过程，这可能是你在任何官方文档中都学不到的经验。</p>
 
-        <h3>25.1 模型导出：PyTorch → ONNX → TensorRT</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f25t f25d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f25t">从训练框架到线上服务的部署链路</title>
+        <desc id="f25d">模型先导出为中间表示，再编译成推理引擎以利用硬件优化，最后由 API 服务层处理请求排队、批处理与监控。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="12" text-anchor="middle" fill="#1e1b4b">
+            <rect x="25" y="75" width="130" height="54" rx="10" fill="#ede9fe"/><text x="90" y="100">PyTorch</text><text x="90" y="119" font-size="11" fill="#6d28d9">训练/微调</text>
+            <rect x="190" y="75" width="120" height="54" rx="10" fill="#e0f2fe"/><text x="250" y="100">ONNX</text><text x="250" y="119" font-size="11" fill="#0369a1">中间表示</text>
+            <rect x="345" y="75" width="130" height="54" rx="10" fill="#dcfce7"/><text x="410" y="100">TensorRT</text><text x="410" y="119" font-size="11" fill="#15803d">硬件优化编译</text>
+            <rect x="510" y="75" width="140" height="54" rx="10" fill="#fef9c3"/><text x="580" y="100">API 服务层</text><text x="580" y="119" font-size="11" fill="#a16207">排队/批处理/监控</text>
+            <rect x="685" y="75" width="115" height="54" rx="10" fill="#ffe4e6"/><text x="742" y="107">客户端</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#a25)"><path d="M155 102 H185"/><path d="M310 102 H340"/><path d="M475 102 H505"/><path d="M650 102 H680"/></g>
+        <defs><marker id="a25" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="45" font-size="12" fill="#334155" text-anchor="middle">每一级都会损失部分灵活度，换取更低的延迟与更高的硬件利用率</text>
+        <text x="410" y="175" font-size="11" fill="#7f1d1d" text-anchor="middle">教学示意：实际加速比取决于模型、批量、序列长度与硬件</text>
+    </svg>
+    <figcaption>部署链路的每一级都有取舍：ONNX 便于跨框架，TensorRT 能充分调用 GPU，但自定义算子可能需要额外适配；服务层则负责把单次推理组织成吞吐优先的系统。</figcaption>
+</figure>
+
+<h2>25.1 模型导出：PyTorch → ONNX → TensorRT</h2>
 
         <p>在生产环境中，我们几乎从不直接使用 PyTorch 的 eager mode 跑推理——太慢了。标准的部署链路是先将模型编译成优化后的中间表示，再用 TensorRT 在 GPU 上生成极致优化的推理引擎。</p>
 
@@ -92,7 +113,7 @@ torch.onnx.export(
             <strong>💡 经验之谈：</strong>在 TensorRT 转换中最容易踩的坑是 <strong>ops 不支持</strong>。Stable Diffusion 的 U-Net 中有一些 PyTorch 特有的操作（如 <code>torch.split</code> 的某些变体），ONNX 导出时可能报错。解决方案：使用 <code>torch.onnx.export</code> 的 <code>custom_opsets</code> 参数注册自定义操作，或者升级 TensorRT 到支持 ONNX opset 18+ 的版本（TensorRT 10.0+）。如果实在无法导出，可以退而使用 <strong>Torch-TensorRT</strong>（TorchScript + TensorRT 混合编译）作为替代方案。
         </div>
 
-        <h3>25.2 推理优化技术</h3>
+        <h2>25.2 推理优化技术</h2>
 
         <p>导出 TensorRT 引擎只是第一步。在整个推理管线中，还有多个可优化的环节：</p>
 
@@ -128,7 +149,7 @@ image = pipe("a cat", num_inference_steps=20).images[0]</code></pre>
             <strong>⚠️ 踩坑实录：</strong>我们在上线 sdpa（Scaled Dot-Product Attention）替代 xformers 时遇到了一个隐蔽的问题。xformers 的 memory-efficient attention 在某些 A100 驱动版本下会触发 <code>CUDA illegal memory access</code> 错误。当时排查了三天，逐一二分法回滚 commit，最后发现问题不是代码逻辑问题，而是<strong>NVIDIA 驱动版本 545.23.08 与 xformers 0.0.24 的一个兼容性 bug</strong>。解决方案是升级驱动到 550.54 并切换到 PyTorch 原生 sdpa。从此我学到了一课：<strong>在排查生产级推理问题时，永远不要忽略驱动 / CUDA 版本这个变量</strong>。
         </div>
 
-        <h3>25.3 vLLM 在扩散模型中的应用</h3>
+        <h2>25.3 vLLM 在扩散模型中的应用</h2>
 
         <p>说到推理优化框架，就不得不提 vLLM。vLLM 最初是为 LLM 设计的推理引擎，其核心创新——<strong>PagedAttention</strong> 和 <strong>连续批处理（Continuous Batching）</strong>——在 2025-2026 年被逐步引入扩散模型推理场景。</p>
 
@@ -160,7 +181,7 @@ clip_embeddings = [o.outputs.embedding for o in outputs]</code></pre>
             <strong>🌟 核心洞察：</strong>在混合负载服务中（比如一个同时支持文本生成和图像生成的 API），使用 vLLM 管理所有的 text encoder + LLM 推理，使用 TensorRT 管理 U-Net / DiT 推理，两者通过异步队列连接——这是 2026 年最主流的生产架构。不要把鸡蛋放在一个篮子里：不同模型架构需要不同的优化引擎。
         </div>
 
-        <h3>25.4 API 服务设计</h3>
+        <h2>25.4 API 服务设计</h2>
 
         <p>一个生产级的 AIGC API 服务，不只是简单地在 FastAPI 里调用 <code>pipe()</code>。你需要考虑：请求排队、超时管理、异步任务、回调通知、成本核算……</p>
 
@@ -242,7 +263,7 @@ async def process_queue(q: asyncio.Queue):
             <li><strong>超载保护：</strong>当队列超过阈值时返回 503，让客户端自行重试——而不是让服务在 OOM 中崩溃。</li>
         </ul>
 
-        <h3>25.5 推理性能对比</h3>
+        <h2>25.5 推理性能对比</h2>
 
         <p>为了帮你选型，下表列出了 2025-2026 主流 GPU 在扩散模型推理中的实测性能数据（基于 SDXL 1.0，20 步 DPM++，1024×1024，batch=1 FP16）：</p>
 
@@ -259,7 +280,7 @@ async def process_queue(q: asyncio.Queue):
             <strong>💡 选型建议：</strong>不要只看单图延迟——对于线上服务，<strong>吞吐量（img/s）</strong>比延迟更重要。RTX 5090 的单图延迟虽然比 A100 还低 33%，但在高并发场景下 A100 的 80 GB 显存允许更大的 batch size，总吞吐量可能反超。如果你需要服务 100+ QPS 的规模，A100/L40 集群仍是唯一选择；如果你的负载在 10-50 QPS 以内，RTX 5090 的性价比极高。
         </div>
 
-        <h3>25.6 真实踩坑：显存泄漏排查与模型热加载机制设计</h3>
+        <h2>25.6 真实踩坑：显存泄漏排查与模型热加载机制设计</h2>
 
         <p>这是 2024 年我负责的一个文生图 API 服务上线后遇到的真实问题。服务上线第三天，运维报警：<strong>单卡 A100 显存从 80 GB 稳步增长，每处理 1000 个请求后显存增加约 2 GB，最终在第 5000 个请求后触发 OOM，服务崩溃。</strong></p>
 
@@ -287,12 +308,18 @@ async def process_queue(q: asyncio.Queue):
 
         <p>下一章我们将进入 Part 6——也是全教程最前沿的部分。第 26 章我们将探讨<strong>自回归统一模型</strong>：Emu3 和 OmniGen-AR 如何用 next-token prediction 统一了图像、视频、文本的生成与理解。这正是 2025-2026 年生成模型领域最激动人心的方向之一。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Li et al., <em>DistriFusion: Distributed Parallel Inference for High-Resolution Diffusion Models</em>, CVPR 2024. <a href="https://arxiv.org/abs/2402.19481">arXiv:2402.19481</a></li>
+    <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="24.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="26.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
