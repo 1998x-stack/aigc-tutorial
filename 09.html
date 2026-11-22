@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,42 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第9章 DDPM加速与改进</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第9章 DDPM加速与改进</h1>
 
         <p>大家好，我是你们的讲师。上一章我们深入了 DDPM 的数学，最终发现一个令人沮丧的事实：高质量生成需要 1000 步推理，而这在实际应用中几乎不可用。许多人戏称扩散模型的采样速度为"龟速生成"——这不是没有道理的。</p>
 
         <p>但好消息是，研究者们在 2021-2023 年间提出了一系列惊艳的工作来解决这个问题。这一章我们要介绍三个关键的改进方向：<strong>DDIM</strong> 改变了采样的随机过程，<strong>LDM</strong> 将扩散从像素空间转移到潜空间，而 <strong>Improved DDPM</strong> 则从噪声调度和方差学习等细节入手提升质量。理解这些改进，你才能真正理解 Stable Diffusion 等实用系统为什么能跑得那么快。</p>
 
-        <h3>9.1 DDIM：去随机化，保持质量</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f9t f9d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f9t">像素空间扩散与潜空间扩散（LDM）的对比</title>
+        <desc id="f9d">LDM 先用 VAE 把图像压缩到小尺寸潜空间，再在潜空间里做扩散，最后解码回像素空间；计算量大幅下降。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <text x="410" y="26" font-size="12" fill="#334155" text-anchor="middle">像素空间扩散：在 512×512×3 上直接加噪/去噪（计算重）</text>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="40" y="38" width="110" height="48" rx="10" fill="#ede9fe"/><text x="95" y="67">像素 x</text>
+            <rect x="230" y="38" width="150" height="48" rx="10" fill="#e0f2fe"/><text x="305" y="61">扩散去噪</text><text x="305" y="78" font-size="11" fill="#0369a1">U-Net</text>
+            <rect x="470" y="38" width="110" height="48" rx="10" fill="#dcfce7"/><text x="525" y="67">图像</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" marker-end="url(#a9)"><path d="M150 62 H225"/><path d="M380 62 H465"/></g>
+        <line x1="30" y1="100" x2="790" y2="100" stroke="#ddd6fe" stroke-width="2"/>
+        <text x="410" y="124" font-size="12" fill="#334155" text-anchor="middle">潜空间扩散（LDM）：先在 64×64×4 小潜空间上扩散，最后解码</text>
+        <g font-size="13" text-anchor="middle" fill="#1e1b4b">
+            <rect x="40" y="138" width="100" height="46" rx="10" fill="#ede9fe"/><text x="90" y="165">像素 x</text>
+            <rect x="180" y="138" width="120" height="46" rx="10" fill="#fef9c3"/><text x="240" y="165">VAE 编码</text>
+            <rect x="340" y="138" width="130" height="46" rx="10" fill="#e0f2fe"/><text x="405" y="165">潜空间扩散</text>
+            <rect x="510" y="138" width="120" height="46" rx="10" fill="#dcfce7"/><text x="570" y="165">VAE 解码</text>
+            <rect x="670" y="138" width="100" height="46" rx="10" fill="#ede9fe"/><text x="720" y="165">图像</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" marker-end="url(#a9)"><path d="M140 161 H175"/><path d="M300 161 H335"/><path d="M470 161 H505"/><path d="M630 161 H665"/></g>
+        <defs><marker id="a9" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+    </svg>
+    <figcaption>SD 的“8 倍空间压缩”使扩散的计算量下降约两个数量级；代价是细节需由解码器重建。潜空间尺寸 512→64 为 Stable Diffusion 论文中的标准配置。</figcaption>
+</figure>
+
+<h2>9.1 DDIM：去随机化，保持质量</h2>
 
         <p>DDIM（Denoising Diffusion Implicit Models）的核心洞察非常巧妙：DDPM 的采样之所以需要 1000 步，是因为它的 Markov 性质要求每一步必须"小步走"。但如果我们可以<strong>打破 Markov 链</strong>，直接从 x_t"跳到"x_{t-Δt} 呢？</p>
 
@@ -75,7 +103,7 @@
 
         <p>可以看到，DDIM 在 50-100 步时能保持与 DDPM 1000 步相当的质量，但速度提升了 10-20 倍。不过到了 10 步以下，DDIM 的质量也开始显著下降——这催生了后来的 DPMSolver 等更先进的 ODE 求解器方法（第 12 章详谈）。</p>
 
-        <h3>9.2 Latent Diffusion Model（LDM）：转战潜空间</h3>
+        <h2>9.2 Latent Diffusion Model（LDM）：转战潜空间</h2>
 
         <p>如果说 DDIM 是对"采样路径"的优化，那么 LDM（即 Stable Diffusion 的前身）则是对<strong>操作空间</strong>的彻底变革。它的思想极其朴素但非常有效：<strong>在像素空间做扩散太慢了，为什么不先压缩到潜空间，然后在潜空间里做扩散？</strong></p>
 
@@ -93,7 +121,7 @@
             <li><strong>灵活性</strong>：同一套扩散架构可以与不同的条件机制（文本、图像、分割图等）结合</li>
         </ul>
 
-        <h3>9.3 VQ-VAE 与 KL-VAE：两种感知压缩方案</h3>
+        <h2>9.3 VQ-VAE 与 KL-VAE：两种感知压缩方案</h2>
 
         <p>LDM 使用的感知压缩器有两种主要选择：</p>
 
@@ -112,7 +140,7 @@
             <strong>💡 深入理解：</strong>VQ-VAE 并非不能用，它启发了一整个分支——DALL·E 和 VQ-Diffusion 等模型用 VQ-VAE 的离散潜空间配合自回归或扩散模型进行生成。但如果你要构建"纯高斯扩散"路线，KL-VAE 是更自然的选择。
         </div>
 
-        <h3>9.4 层级式扩散</h3>
+        <h2>9.4 层级式扩散</h2>
 
         <p>除了 LDM 的单级潜空间扩散，还有一种"由粗到细"的层级式方法——级联扩散模型（Cascaded Diffusion Models）。它的思路类似于 Progressive Growing GAN：先在一个低分辨率版本上生成，然后逐步超分到高分辨率。</p>
 
@@ -124,7 +152,7 @@
 
         <p>级联扩散的一个关键技巧是<strong>条件增强</strong>（Conditioning Augmentation）——在将低分辨率图像输入超分模型时，对低分辨率图像加入随机噪声或高斯模糊。这个看似反直觉的操作实际上大幅提升了超分模型的鲁棒性，因为它让 SR 模型在推理时能容忍 Base 模型生成的不完美低分辨率结果。</p>
 
-        <h3>9.5 Improved DDPM</h3>
+        <h2>9.5 Improved DDPM</h2>
 
         <p>OpenAI 的 Improved DDPM（2021）是对原始 DDPM 的精细打磨，主要贡献包括：</p>
 
@@ -150,12 +178,18 @@
 
         <p>DDPM 的这些改进方向最终汇聚成了 Stable Diffusion——它结合了 LDM 的潜空间扩散、Improved DDPM 的调度优化，以及 CLIP 文本编码实现了文生图能力。下一章，我们将详解 Stable Diffusion 的完整架构。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Song et al., <em>Denoising Diffusion Implicit Models</em>, 2020（DDIM）. <a href="https://arxiv.org/abs/2010.02502">arXiv:2010.02502</a></li>
+    <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022（LDM）. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="08.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="10.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

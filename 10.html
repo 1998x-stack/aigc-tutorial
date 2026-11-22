@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,41 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第10章 Stable Diffusion架构</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第10章 Stable Diffusion架构</h1>
 
         <p>大家好，我是你们的讲师。如果说 DDPM 是扩散模型的"理论基础"，DDIM 和 LDM 是"关键突破"，那么 <strong>Stable Diffusion（SD）</strong>就是让扩散模型"走向大众"的里程碑。2022 年 8 月，Stability AI 将 SD 开源后，整个 AIGC 生态被彻底点燃——设计师、开发者、艺术家、甚至普通用户都能在自己的电脑上运行文生图模型。</p>
 
         <p>这一章，我们将解剖 SD 的完整架构。你将看到三个核心模块——VAE、U-Net、CLIP——如何协同工作，以及 SD 从 1.0 到 3.0 经历了怎样的技术演进。理解 SD 架构是下一阶段学习 ControlNet、LoRA、模型微调等高级技术的必要前提。</p>
 
-        <h3>10.1 整体架构：三模块协同</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f10t f10d" viewBox="0 0 820 210" xmlns="http://www.w3.org/2000/svg">
+        <title id="f10t">Stable Diffusion 的三模块协同架构</title>
+        <desc id="f10d">文本提示经 CLIP 文本编码器得到条件向量，U-Net 在潜空间去噪时通过交叉注意力注入文本条件，最后 VAE 解码为图像。</desc>
+        <rect width="820" height="210" rx="16" fill="#faf8ff"/>
+        <g font-size="14" text-anchor="middle" fill="#1e1b4b">
+            <rect x="30" y="80" width="140" height="56" rx="12" fill="#dcfce7"/><text x="100" y="103">文本提示</text><text x="100" y="121" font-size="11" fill="#15803d">prompt</text>
+            <rect x="220" y="80" width="150" height="56" rx="12" fill="#e0f2fe"/><text x="295" y="103">CLIP 文本编码器</text><text x="295" y="121" font-size="11" fill="#0369a1">输出条件 c</text>
+            <rect x="420" y="30" width="200" height="66" rx="12" fill="#fef9c3"/><text x="520" y="55">U-Net 去噪</text><text x="520" y="74" font-size="11" fill="#a16207">Cross-Attention 注入 c</text><text x="520" y="89" font-size="11" fill="#a16207">潜空间 z_Т → z₀</text>
+            <rect x="420" y="140" width="200" height="50" rx="12" fill="#ede9fe"/><text x="520" y="170">VAE 解码器</text>
+            <rect x="670" y="100" width="120" height="56" rx="12" fill="#fee2e2"/><text x="730" y="133">图像</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" fill="none" marker-end="url(#a10)">
+            <path d="M170 108 H215"/><path d="M370 103 C 400 103 400 63 415 63"/>
+            <path d="M520 96 V135"/><path d="M620 165 H665"/>
+        </g>
+        <path d="M520 20 C 520 5 300 5 300 75" stroke="#147f80" stroke-width="3" stroke-dasharray="6 4" fill="none" marker-end="url(#a10b)"/>
+        <defs>
+            <marker id="a10" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker>
+            <marker id="a10b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#147f80"/></marker>
+        </defs>
+        <text x="410" y="16" font-size="11" fill="#0f766e" text-anchor="middle">青色虚线：文本条件通过交叉注意力进入 U-Net 的每一层</text>
+    </svg>
+    <figcaption>SD 把文本理解（CLIP）、去噪生成（U-Net）和图像重建（VAE）解耦成三个可独立替换的模块，这是它能快速迭代出 SD1.5/SDXL/SD3 等版本的工程基础。</figcaption>
+</figure>
+
+<h2>10.1 整体架构：三模块协同</h2>
 
         <p>Stable Diffusion 不是一个单一的神经网络，而是三个模块的协同系统：</p>
 
@@ -66,7 +93,7 @@
             <strong>🌟 核心洞察：</strong>SD 的架构设计体现了"分而治之"的思想——CLIP 负责"理解语义"，U-Net 负责"生成内容"，VAE 负责"解码呈现"。每个模块各司其职，可以独立优化和替换。这种模块化设计是 SD 生态如此繁荣的根本原因。
         </div>
 
-        <h3>10.2 VAE 模块：8 倍压缩的感知压缩器</h3>
+        <h2>10.2 VAE 模块：8 倍压缩的感知压缩器</h2>
 
         <p>LDM（第 9 章）的核心思想被 SD 直接继承：用 VAE 将 512×512×3 的图像压缩为 64×64×4 的潜表示，压缩比约为 48 倍（512×512×3 / 64×64×4 ≈ 48）。</p>
 
@@ -89,7 +116,7 @@
 # Conv2D(512→8, 3×3) → split into mean + logvar (各4通道)
 # 输出: [1, 4, 64, 64]（采样后）</code></pre>
 
-        <h3>10.3 U-Net 结构</h3>
+        <h2>10.3 U-Net 结构</h2>
 
         <p>U-Net 是 SD 中真正的"主力"，它负责在潜空间中执行多步去噪。SD 的 U-Net 结构遵循经典的"下采样-瓶颈-上采样"设计，并加入了残差连接和跳跃连接（Skip Connections）。</p>
 
@@ -108,7 +135,7 @@
             <strong>💡 直觉理解：</strong>U-Net 的对称结构类似于一个"编码器-解码器"——编码器逐步提取高层语义特征，解码器将这些语义特征逐步还原为精细的空间结构。跳跃连接的作用是让解码器能直接访问编码器各层的细粒度空间信息，避免信息在瓶颈处丢失。
         </div>
 
-        <h3>10.4 Cross-Attention 机制</h3>
+        <h2>10.4 Cross-Attention 机制</h2>
 
         <p>Cross-Attention 是 SD 实现"文生图"的核心机制。它将 CLIP 编码的文本特征注入到 U-Net 的中间层：</p>
 
@@ -123,7 +150,7 @@ Attention(Q, K, V) = softmax(Q · K^T / √d) · V</code></pre>
 
         <p>每个注意力头的输出会经过一个线性投影后与输入相加（残差连接），使得模型可以选择性地"关注"文本中对应位置的语义信息。例如，生成 "a red apple on a blue table" 时，不同区域的像素会通过 Cross-Attention 找到对应的语义 token。</p>
 
-        <h3>10.5 SD 版本演进对比</h3>
+        <h2>10.5 SD 版本演进对比</h2>
 
         <p>从 2022 年 8 月的 SD 1.0 到 2024 年的 SD 3.0，SD 经历了多次重大迭代：</p>
 
@@ -140,7 +167,7 @@ Attention(Q, K, V) = softmax(Q · K^T / √d) · V</code></pre>
             <strong>🌟 核心洞察：</strong>SD 的演进路线揭示了几个趋势：模型越来越大（860M → 8B），文本理解能力越来越强（单 CLIP → 双 CLIP → CLIP + T5），架构从 U-Net 向 DiT 迁移。SD 3.0 的 MM-DiT 架构是自 SD 1.0 以来最重大的架构变革——我们将在第 13 章和第 19 章详细分析。
         </div>
 
-        <h3>10.6 完整推理管线</h3>
+        <h2>10.6 完整推理管线</h2>
 
         <p>将上述所有部分串联起来，SD 的一次完整推理流程如下：</p>
 
@@ -161,12 +188,18 @@ Attention(Q, K, V) = softmax(Q · K^T / √d) · V</code></pre>
 
         <p>掌握了 SD 的架构后，下一章我们将深入文本条件注入机制——CLIP 编码器、CFG（Classifier-Free Guidance）和 Negative Prompt 是如何让 SD 理解并严格执行你的 prompt 的。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+    <li>Ronneberger et al., <em>U-Net: Convolutional Networks for Biomedical Image Segmentation</em>, 2015. <a href="https://arxiv.org/abs/1505.04597">arXiv:1505.04597</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="09.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="11.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

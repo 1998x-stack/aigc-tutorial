@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,35 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第11章 文本条件注入</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第11章 文本条件注入</h1>
 
         <p>大家好，我是你们的讲师。上一章我们了解了 Stable Diffusion 的三模块架构，其中 CLIP Text Encoder 负责将文本 prompt 转化为条件信号注入 U-Net。但具体的注入机制是什么？为什么 "a cat" 和 "a dog" 会产生截然不同的生成结果？为什么输入一个"负面提示"（Negative Prompt）可以去掉你不想要的内容？</p>
 
         <p>这一章我们深入<strong>文本条件注入</strong>（Text Conditioning）的底层机制。我们将从最基础的 Classifier Guidance 讲起，再到今天成为行业标准的 Classifier-Free Guidance（CFG），最后解析 CLIP 编码器和 Negative Prompt 的工作原理。理解这些机制，你才能真正理解为什么同一个 prompt 在不同的 CFG 尺度下会产生天差地别的结果。</p>
 
-        <h3>11.1 Classifier Guidance：最初的条件控制</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f11t f11d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f11t">无分类器引导（CFG）的双分支结构</title>
+        <desc id="f11d">同一个去噪网络分别计算带条件与不带条件的噪声预测，再用引导尺度 w 把两者线性外推，得到同时满足真实感与提示词遵循的输出。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="14" text-anchor="middle" fill="#1e1b4b">
+            <rect x="30" y="30" width="150" height="52" rx="12" fill="#e0f2fe"/><text x="105" y="61">条件分支 ε_c</text>
+            <rect x="30" y="120" width="150" height="52" rx="12" fill="#e2e8f0"/><text x="105" y="151">无条件分支 ε_∅</text>
+            <rect x="300" y="75" width="210" height="56" rx="12" fill="#fef9c3"/><text x="405" y="99">线性外推</text><text x="405" y="119" font-size="11" fill="#a16207">ε̂ = ε_∅ + w·(ε_c − ε_∅)</text>
+            <rect x="610" y="75" width="180" height="56" rx="12" fill="#dcfce7"/><text x="700" y="99">引导后的噪声预测</text><text x="700" y="119" font-size="11" fill="#15803d">w 越大越贴合提示词</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" fill="none" marker-end="url(#a11)">
+            <path d="M180 56 C 250 56 250 95 295 99"/><path d="M180 146 C 250 146 250 112 295 108"/><path d="M510 103 H605"/>
+        </g>
+        <defs><marker id="a11" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+        <text x="410" y="185" font-size="12" fill="#7f1d1d" text-anchor="middle">w = 1 时退化为普通条件去噪；w 过大则过饱和、细节崩坏（见 11.6 节踩坑）</text>
+    </svg>
+    <figcaption>CFG 不需要额外训练一个分类器，而是在同一个网络里同时跑“带条件”和“空条件”两次前向，用两者的差做外推。代价是每次采样要算两次前向，推理成本翻倍。</figcaption>
+</figure>
+
+<h2>11.1 Classifier Guidance：最初的条件控制</h2>
 
         <p>在 CFG 被提出之前，扩散模型的条件生成主要依赖 Classifier Guidance。核心思路是：训练一个额外的分类器（比如 ImageNet 分类器），在采样过程中用分类器的梯度来"引导"生成结果朝着目标类别方向偏移。</p>
 
@@ -69,7 +90,7 @@
             <strong>💡 历史背景：</strong>Classifier Guidance 虽然现在很少直接使用，但它的思想深刻影响了后续的方法。CFG 可以看作是一种"无分类器的隐式分类器梯度"——它通过比较条件预测和无条件预测的差异来获得"引导方向"，而不需要真正的分类器。
         </div>
 
-        <h3>11.2 Classifier-Free Guidance（CFG）</h3>
+        <h2>11.2 Classifier-Free Guidance（CFG）</h2>
 
         <p>CFG 在 2021 年被提出（Ho & Salimans），核心思想非常简单却极其优雅：<strong>在训练时，随机丢弃条件信息（用空文本替代 prompt），让同一个模型同时学会"条件预测"和"无条件预测"两种能力。在推理时，通过插值来调节条件控制的强度。</strong></p>
 
@@ -90,7 +111,7 @@
             <strong>🌟 核心洞察：</strong>CFG 范式从根本上改变了条件生成的方式。它用"条件预测减去无条件预测"来近似 Classifier Guidance 中的"分类器梯度"方向——这个差向量捕捉了"prompt 想要什么"的信息。w 越大，模型就越倾向于采样那些"更符合 prompt"的 region，但代价是多样性下降。
         </div>
 
-        <h3>11.3 CFG 尺度 w 的选择</h3>
+        <h2>11.3 CFG 尺度 w 的选择</h2>
 
         <p>CFG 尺度 w 是最重要的推理超参数之一。它的选择直接影响生成质量：</p>
 
@@ -105,7 +126,7 @@
 
         <p>不同版本 SD 对 CFG 尺度的敏感度不同。SD 1.5 的最佳 CFG 通常在 7.5 左右，SDXL 的最佳 CFG 在 5.0-7.0 之间，而 SD 3.0 和 FLUX 对 CFG 的敏感度更低，通常用较小的值即可获得良好的 prompt 遵守。</p>
 
-        <h3>11.4 CLIP Text Encoder</h3>
+        <h2>11.4 CLIP Text Encoder</h2>
 
         <p>CLIP（Contrastive Language-Image Pre-training）是一个多模态模型，它的 Text Encoder 承担着将自然语言 prompt 转化为可供 U-Net 使用的条件特征向量的任务。我们在第 15 章会深入剖析 CLIP 的完整训练方式，这一章我们聚焦它在 SD 中的具体角色。</p>
 
@@ -135,7 +156,7 @@ text_emb = text_encoder(tokens.input_ids)[0]  # → [1, 77, 768]
             <strong>⚠️ 真实的踩坑故事：</strong>我曾在一个项目中被要求生成"一段长文本描述的产品宣传图"。我写了一个 200 多字的 prompt，满怀期待地输入 SD，结果生成的图像完全忽略了后半段 prompt。百思不得其解后才发现——CLIP 的上下文长度限制是 77 tokens，后半部分被悄无声息地截断了。Diffusers 和 ComfyUI 都不会给出任何警告信息。后来我学会了两个策略：一是使用 SDXL，它支持更长的上下文并使用了双编码器；二是对于长 prompt，将最重要的描述放在前 70 个 token 以内（留一些 buffer 给起始和结束 token）。
         </div>
 
-        <h3>11.5 Negative Prompt 的原理</h3>
+        <h2>11.5 Negative Prompt 的原理</h2>
 
         <p>Negative Prompt（负面提示）是 Stable Diffusion 生态中一个非常"神奇"的功能——你告诉模型"不要在图像中出现的元素"，它就能真的避免生成这些元素。背后的原理其实非常简单：</p>
 
@@ -152,7 +173,7 @@ text_emb = text_encoder(tokens.input_ids)[0]  # → [1, 77, 768]
             <li><strong>风格相关</strong>："watermark, text, signature"</li>
         </ul>
 
-        <h3>11.6 CFG 过高的踩坑</h3>
+        <h2>11.6 CFG 过高的踩坑</h2>
 
         <p>CFG 尺度过大带来的问题是真实项目中最常见的"新手失误"之一。让我们看一个典型的现象：</p>
 
@@ -164,12 +185,18 @@ text_emb = text_encoder(tokens.input_ids)[0]  # → [1, 77, 768]
 
         <p>理解了文本条件注入之后，下一章我们将探讨采样策略——DPMSolver、Euler、LCM 等采样器如何以更少的步骤实现快速生成，以及如何在采样质量和速度之间做选择。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Dhariwal &amp; Nichol, <em>Diffusion Models Beat GANs on Image Synthesis</em>, 2021（分类器引导）. <a href="https://arxiv.org/abs/2105.05233">arXiv:2105.05233</a></li>
+    <li>Ho &amp; Salimans, <em>Classifier-Free Diffusion Guidance</em>, 2022. <a href="https://arxiv.org/abs/2207.12598">arXiv:2207.12598</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="10.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="12.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
