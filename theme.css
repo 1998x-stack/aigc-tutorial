@@ -62,7 +62,14 @@ body {
 }
 
 /* === Main Content === */
-.main-content { padding: 30px 35px; background: white; }
+.main-content { padding: 30px 35px; background: white; min-width: 0; }
+
+.container > * { min-width: 0; }
+pre { max-width: 100%; }
+
+/* Keep wide tables scrollable instead of forcing page overflow */
+.table-scroll { overflow-x: auto; max-width: 100%; }
+.table-scroll table { min-width: 460px; }
 
 /* === Typography === */
 h2 {

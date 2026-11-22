@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,38 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第4章 GAN对抗生成网络奠基</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第4章 GAN对抗生成网络奠基</h1>
 
         <p>大家好，我是你们的讲师。2014 年的一个夜晚，Ian Goodfellow 和朋友们在酒吧里讨论一个困扰已久的问题：如何让神经网络真正"创造"出逼真的数据？酒精催化下，一个狂野的想法诞生了——让两个网络互相博弈，一个负责造假，一个负责识假。这就是 GAN（Generative Adversarial Network）的起源。</p>
 
         <p>这个故事听起来像个段子，但它是真的。2014 年 Goodfellow 发表的 GAN 论文至今已被引用超过 10 万次，是深度学习领域引用最高的论文之一。更重要的是，GAN 的对抗训练范式深刻改变了我们对"生成"的理解。即使现在扩散模型已经取代了 GAN 的主流地位，理解 GAN 的数学原理仍然是理解生成模型不可或缺的一环。</p>
 
-        <h3>4.1 GAN 论文核心思想</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f4t f4d" viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg">
+        <title id="f4t">GAN 的生成器—判别器对抗回路</title>
+        <desc id="f4d">噪声 z 经生成器得到假样本，与真实样本一起送入判别器；判别器输出真假概率，生成器根据判别器梯度更新，两者交替优化。</desc>
+        <rect width="820" height="220" rx="16" fill="#faf8ff"/>
+        <g font-size="15" text-anchor="middle">
+            <rect x="30" y="30" width="120" height="52" rx="12" fill="#ede9fe"/><text x="90" y="61" fill="#4c1d95">噪声 z</text>
+            <rect x="220" y="30" width="150" height="52" rx="12" fill="#e0f2fe"/><text x="295" y="61" fill="#0c4a6e">生成器 G</text>
+            <rect x="450" y="30" width="150" height="52" rx="12" fill="#fee2e2"/><text x="525" y="61" fill="#7f1d1d">判别器 D</text>
+            <rect x="450" y="140" width="150" height="52" rx="12" fill="#dcfce7"/><text x="525" y="171" fill="#14532d">真实样本 x</text>
+            <rect x="680" y="85" width="110" height="52" rx="12" fill="#fef9c3"/><text x="735" y="105" fill="#713f12">真 / 假</text><text x="735" y="124" font-size="11" fill="#a16207">概率输出</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" fill="none" marker-end="url(#a4)"><path d="M150 56 H215"/><path d="M370 56 H445"/><path d="M525 140 V90"/><path d="M600 56 C 650 56 650 95 675 103"/><path d="M600 166 C 660 166 660 130 675 122"/></g>
+        <path d="M525 85 C 360 85 300 90 295 88" stroke="#d06d4d" stroke-width="4" stroke-dasharray="7 5" fill="none" marker-end="url(#a4b)"/>
+        <defs>
+            <marker id="a4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker>
+            <marker id="a4b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#d06d4d"/></marker>
+        </defs>
+        <text x="410" y="212" font-size="12" fill="#7f1d1d" text-anchor="middle">红色虚线：判别器的梯度反传给 G，使 G 向“骗过 D”的方向更新</text>
+    </svg>
+    <figcaption>G 与 D 交替优化：固定 G 训练 D 提高辨别能力，固定 D 训练 G 提高欺骗能力。论文证明最优 D 下的生成损失等价于优化真实分布与生成分布间的 JS 散度（见 4.4 节）。</figcaption>
+</figure>
+
+<h2>4.1 GAN 论文核心思想</h2>
 
         <p>GAN 的框架极其简洁，只有两个组件：</p>
 
@@ -70,7 +94,7 @@
             <strong>💡 直觉理解：</strong>这就像假币制造者和银行柜员之间的较量。假币制造者（G）不断改进印刷技术，银行柜员（D）不断学习识别新式假币。最终假币逼真到连专家都识别不出来——这就是"以假乱真"。
         </div>
 
-        <h3>4.2 Minimax 博弈目标函数</h3>
+        <h2>4.2 Minimax 博弈目标函数</h2>
 
         <p>GAN 的数学表述非常优雅，Goodfellow 将其写成了一个 minimax（极小极大）目标函数：</p>
 
@@ -90,7 +114,7 @@
 
         <p>实际训练时，log(1 - D(G(z))) 在早期梯度太小（判别器太容易赢），所以通常使用 "log D" 的技巧——不让 G 最小化 log(1-D)，而是最大化 log(D(G(z)))，梯度信号更强。</p>
 
-        <h3>4.3 训练过程：交替优化</h3>
+        <h2>4.3 训练过程：交替优化</h2>
 
         <p>GAN 的训练是一个精巧的交替过程：</p>
 
@@ -116,7 +140,7 @@
             <tr><td>收敛（理想）</td><td>完全无法区分</td><td>生成逼真图</td><td>D 准确率 = 50%</td></tr>
         </table>
 
-        <h3>4.4 理论证明：最优判别器与 JS 散度</h3>
+        <h2>4.4 理论证明：最优判别器与 JS 散度</h2>
 
         <p>GAN 论文中最漂亮的理论贡献是证明了：<strong>当判别器达到最优时，生成器实际在最小化真实分布和生成分布之间的 JS 散度</strong>。</p>
 
@@ -138,7 +162,7 @@
             <strong>🌟 核心洞察：</strong>这个证明将 GAN 的对抗训练与第 2 章的概率理论完美连接——GAN 的 minimax 博弈最终等价于最小化 JS 散度。但 JS 散度在高维空间中有一个致命问题：当两个分布没有重叠时，JS 散度为常数 log 2，梯度为零——这就是 GAN 训练困难的理论根源。
         </div>
 
-        <h3>4.5 GAN 训练的核心痛点</h3>
+        <h2>4.5 GAN 训练的核心痛点</h2>
 
         <p>如果你真的训练过 GAN，你一定会对其"任性"印象深刻。以下是 GAN 训练中最经典的三个问题：</p>
 
@@ -159,7 +183,7 @@
             <strong>⚠️ 一个真实的踩坑故事：</strong>2018 年我花了一个月训练一个 GAN 来生成人脸头像。前两周一直在跟模式坍塌搏斗——生成器学到的全是"金发碧眼的白人女性"（可能是训练集中最多的模式），不管怎么调超参数都跑不出这一种。我试了 Minibatch Discrimination、特征匹配、标签平滑……能搜到的技巧都试了一遍。最后解决方式出乎意料：我把判别器加深了两层，同时给 G 增加了 dropout。这让我意识到，GAN 训练更像一个"实验艺术"——理论框架只能告诉你大致方向，具体配置全靠试错和直觉积累。那一个月后我养成了一个习惯：每次改 GAN 代码只改一个超参数，用 Weights & Biases 把所有实验记录下来。
         </div>
 
-        <h3>4.6 "踩坑"经验总结</h3>
+        <h2>4.6 "踩坑"经验总结</h2>
 
         <p>基于我和同行的大量 GAN 训练经验，这里分享几个可能是最有用的实战技巧：</p>
 
@@ -176,12 +200,18 @@
 
         <p>下一章，我们将看到研究者们如何针对 GAN 的这些痛点进行系统性改进——从 DCGAN 的卷积架构到 WGAN 的 Wasserstein 距离，从 StyleGAN 的风格解耦到条件 GAN 的条件控制。这是一段"打怪升级、不断进化"的历史。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Goodfellow et al., <em>Generative Adversarial Networks</em>, NeurIPS 2014. <a href="https://arxiv.org/abs/1406.2661">arXiv:1406.2661</a></li>
+    <li>Arjovsky &amp; Bottou, <em>Towards Principled Methods for Training Generative Adversarial Networks</em>, 2017（JS 散度与梯度消失的分析）. <a href="https://arxiv.org/abs/1701.04862">arXiv:1701.04862</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="03.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="05.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

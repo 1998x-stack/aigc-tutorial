@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html">第1章 生成模型概述</a></li>
             <li><a href="02.html" class="active">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,32 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第2章 概率生成理论基础</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第2章 概率生成理论基础</h1>
 
         <p>大家好，我是你们的讲师。很多同学在学生成模型时，一上来就对着 VAE 的 ELBO 推导、GAN 的 Minimax 目标函数发懵——"这些变分下界、KL 散度到底是什么？为什么要用它们？"</p>
 
         <p>这一章我们不上模型，先把生成模型大厦的<strong>数学地基</strong>打牢。你会发现，从 VAE 到扩散模型再到 Flow Matching，几乎所有生成模型的核心都是在干同一件事：<strong>衡量并最小化"模型分布"和"真实分布"之间的差异</strong>。理解了本章的三个概念——极大似然估计、KL 散度、变分推断——你就掌握了读懂的密码。</p>
 
-        <h3>2.1 概率模型基础回顾</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 820 170" xmlns="http://www.w3.org/2000/svg">
+        <title id="f2t">概率生成理论的四个核心概念关系</title>
+        <desc id="f2d">从数据分布出发，极大似然给出训练目标，KL 散度衡量模型分布与真实分布的差距，当分布难以直接计算时用变分推断与 ELBO 近似。</desc>
+        <rect width="820" height="170" rx="16" fill="#faf8ff"/>
+        <g font-size="15" text-anchor="middle">
+            <rect x="20" y="56" width="150" height="60" rx="12" fill="#ede9fe"/><text x="95" y="83" fill="#4c1d95">数据分布 P(X)</text><text x="95" y="103" font-size="11" fill="#6d28d9">未知的真实分布</text>
+            <rect x="235" y="56" width="150" height="60" rx="12" fill="#e0f2fe"/><text x="310" y="83" fill="#0c4a6e">极大似然 MLE</text><text x="310" y="103" font-size="11" fill="#0369a1">max E[log pθ]</text>
+            <rect x="450" y="56" width="150" height="60" rx="12" fill="#dcfce7"/><text x="525" y="83" fill="#14532d">KL / JS 散度</text><text x="525" y="103" font-size="11" fill="#15803d">度量分布差距</text>
+            <rect x="665" y="56" width="135" height="60" rx="12" fill="#fef9c3"/><text x="732" y="83" fill="#713f12">变分推断·ELBO</text><text x="732" y="103" font-size="11" fill="#a16207">不可解时近似</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" marker-end="url(#a2)"><path d="M170 86 H230"/><path d="M385 86 H445"/><path d="M600 86 H660"/></g>
+        <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+    </svg>
+    <figcaption>这四个概念贯穿全套教程：MLE 给出“训练就是在最大化数据似然”，KL 散度是把似然转成可优化目标的桥梁，变分推断则是在积分不可解时的近似手段。</figcaption>
+</figure>
+
+<h2>2.1 概率模型基础回顾</h2>
 
         <p>在深入之前，快速回顾几个你高中学过但可能忘记的概率基础概念。它们贯穿所有生成模型。</p>
 
@@ -75,7 +93,7 @@
             <tr><td>证据/边际似然</td><td>P(x)</td><td>衡量模型对数据的拟合程度</td></tr>
         </table>
 
-        <h3>2.2 极大似然估计（MLE）</h3>
+        <h2>2.2 极大似然估计（MLE）</h2>
 
         <p>生成模型的核心任务：找到一组参数 θ，使得模型生成的数据分布 P_θ(x) 尽可能接近真实数据分布 P_data(x)。</p>
 
@@ -106,7 +124,7 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
             <strong>🌟 关键洞察：</strong>无论模型多复杂，最终目标都一样：最小化两个分布的差异。VAE 用 KL 散度做正则项，GAN 用 JS 散度做对抗目标，扩散模型用噪声预测做 MLE——万变不离其宗。
         </div>
 
-        <h3>2.3 KL 散度与 JS 散度</h3>
+        <h2>2.3 KL 散度与 JS 散度</h2>
 
         <p><strong>KL 散度</strong>（Kullback-Leibler Divergence）也叫相对熵，衡量两个概率分布 P 和 Q 之间的差异：</p>
 
@@ -135,7 +153,7 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
             <strong>💡 直觉理解：</strong>KL 散度像一把"有方向的尺子"——从 P 到 Q 和从 Q 到 P 的读数不一样。JS 散度去掉方向，直接给出一个对称的差异值。GAN 的原始论文证明，当判别器训练到最优时，生成器实际上在最小化 JS 散度。
         </div>
 
-        <h3>2.4 变分推断（Variational Inference）</h3>
+        <h2>2.4 变分推断（Variational Inference）</h2>
 
         <p>现在问题来了：后验分布 P(z|x) 通常是<strong>不可解的</strong>。为什么？因为分母 P(x) = ∫ P(x|z)P(z) dz 要在整个潜空间上积分——对于高维潜变量，这个积分是计算不可行的。</p>
 
@@ -161,7 +179,7 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
             <strong>🌟 核心洞察：</strong>ELBO = 重建损失 + KL 正则——这个二元结构贯穿整个生成模型家族。VAE 直接用它做损失函数。扩散模型的噪声预测本质上也是一种重建损失。理解 ELBO，你就理解了生成模型优化目标的一半。
         </div>
 
-        <h3>2.5 与后续章节的联系</h3>
+        <h2>2.5 与后续章节的联系</h2>
 
         <p>本章看似抽象的概率理论，在后续章节中会反复出现：</p>
 
@@ -180,12 +198,18 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
 
         <p>下一章，我们将进入第一个完整的生成模型——VAE（变分自编码器）。你会看到 ELBO 如何从理论变成 PyTorch 代码中的 loss 函数，以及那个著名的"重参数化技巧"是如何解决梯度传播问题的。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Kingma &amp; Welling, <em>Auto-Encoding Variational Bayes</em>, 2013. <a href="https://arxiv.org/abs/1312.6114">arXiv:1312.6114</a></li>
+    <li>Goodfellow et al., <em>Generative Adversarial Networks</em>, 2014（KL/JS 散度在 GAN 分析中的应用）. <a href="https://arxiv.org/abs/1406.2661">arXiv:1406.2661</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="01.html">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="03.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>

@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<a class="skip-link" href="#content">跳转至正文</a>
 <div class="double-border">
 <div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
+    <nav class="sidebar" aria-label="课程目录">
+        <p class="toc-title">🤖 课程目录</p>
         <ul class="chapter-list">
             <li><a href="01.html" class="active">第1章 生成模型概述</a></li>
             <li><a href="02.html">第2章 概率生成理论基础</a></li>
@@ -41,15 +42,35 @@
             <li><a href="27.html">第27章 实时生成新范式</a></li>
             <li><a href="28.html">第28章 综合项目</a></li>
         </ul>
-    </div>
-    <div class="main-content">
-        <h2>第1章 生成模型概述</h2>
+    </nav>
+    <main id="content" class="main-content">
+        <h1>第1章 生成模型概述</h1>
 
         <p>大家好，我是你们的讲师。在 2026 年的今天，"AI 生成"四个字已经彻底改变了我们创作内容的方式——从 DALL·E 3 到 Stable Diffusion，从 Sora 到 Emu3，AI 能够生成以假乱真的图像、流畅的视频、逼真的语音，甚至完整的 3D 场景。但这一切的根基，是过去十年中逐步积累的<strong>生成模型</strong>（Generative Models）理论。</p>
 
         <p>这一章，我们将俯瞰整个生成模型的版图：它解决什么问题？有哪些主流路线？各自有什么优劣？以及，为什么 2026 年的今天，我们需要同时理解 GAN、VAE、扩散模型和自回归模型——而不是只学其中一个？</p>
 
-        <h3>1.1 什么是生成模型</h3>
+        <figure>
+    <svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+        <title id="f1t">生成模型四大流派的演进与融合</title>
+        <desc id="f1d">VAE、GAN、自回归、扩散四条路线并行发展，共同汇入以 Stable Diffusion 为代表的现代 AIGC 技术栈。</desc>
+        <rect width="820" height="200" rx="16" fill="#faf8ff"/>
+        <g font-size="14" text-anchor="middle">
+            <rect x="20" y="24" width="150" height="52" rx="12" fill="#ede9fe"/><text x="95" y="55" fill="#4c1d95">VAE · 潜空间（2013）</text>
+            <rect x="20" y="90" width="150" height="52" rx="12" fill="#fee2e2"/><text x="95" y="121" fill="#7f1d1d">GAN · 对抗（2014）</text>
+            <rect x="20" y="156" width="150" height="52" rx="12" fill="#dcfce7"/><text x="95" y="187" fill="#14532d">自回归 · 逐 token</text>
+            <rect x="305" y="90" width="150" height="52" rx="12" fill="#e0f2fe"/><text x="380" y="121" fill="#0c4a6e">扩散 · 加噪/去噪</text>
+            <rect x="600" y="90" width="200" height="52" rx="12" fill="#fef9c3"/><text x="700" y="121" fill="#713f12">现代 AIGC 技术栈</text>
+        </g>
+        <g stroke="#8b5cf6" stroke-width="4" fill="none" marker-end="url(#a1)">
+            <path d="M170 50 C 250 50 250 110 305 113"/><path d="M170 116 H300"/><path d="M170 182 C 250 182 250 130 305 122"/><path d="M455 116 H595"/>
+        </g>
+        <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#8b5cf6"/></marker></defs>
+    </svg>
+    <figcaption>四大流派不是互相取代，而是逐步融合：Stable Diffusion 用 VAE 压缩、扩散去噪、CLIP 对齐文本，是典型的集大成者。图示为概念示意，年份为各范式代表性论文的首次提出时间。</figcaption>
+</figure>
+
+<h2>1.1 什么是生成模型</h2>
 
         <p>简单来说，<strong>判别模型</strong>（Discriminative Model）学习的是"给定输入 X，输出标签 Y 的概率分布 P(Y|X)"——比如给一张猫的图片，判断"这是猫"。而<strong>生成模型</strong>（Generative Model）学习的是数据的联合分布 P(X, Y) 或数据本身的分布 P(X)——它要能够<em>创造</em>出新的、合理的样本。</p>
 
@@ -68,27 +89,27 @@
             <strong>💡 直觉理解：</strong>如果你只见过 10 张猫的照片，判别模型可以学会"这是猫"，但让它画一张新猫——它连爪子该放哪里都不知道。生成模型则需要真正理解"猫的结构"才能生成合理的图像。
         </div>
 
-        <h3>1.2 生成模型的四大流派</h3>
+        <h2>1.2 生成模型的四大流派</h2>
 
         <p>自 2013 年以来，生成模型大致经历了四条技术路线的演进。理解这四条路线的思想，是后续所有章节的基础。</p>
 
-        <h4>1.2.1 VAE — 变分自编码器（2013）</h4>
+        <h3>1.2.1 VAE — 变分自编码器（2013）</h3>
         <p>VAE 的核心思想是：把高维数据（如图片）压缩到一个低维的<strong>潜空间</strong>（Latent Space），然后从这个潜空间中采样再解码回数据空间。它引入了"重参数化技巧"（Reparameterization Trick）来解决梯度无法通过随机采样传播的问题。VAE 的生成质量在四大流派中<strong>相对较低</strong>（生成的图像偏模糊），但它提供了潜空间操作的核心范式——这个思想深刻影响了后来的 Stable Diffusion。</p>
 
-        <h4>1.2.2 GAN — 生成对抗网络（2014）</h4>
+        <h3>1.2.2 GAN — 生成对抗网络（2014）</h3>
         <p>Goodfellow 提出的 GAN 开创了"<strong>对抗训练</strong>"（Adversarial Training）范式：一个生成器（Generator）试图骗过判别器（Discriminator），而判别器试图识破生成器的把戏。这个"猫鼠游戏"推动生成器不断进步。GAN 的巅峰时代（2016-2021）产出了 StyleGAN、BigGAN 等令人惊叹的模型，至今仍是某些场景下的最优解。但它有两个硬伤：训练不稳定、模式坍塌（Mode Collapse）。</p>
 
-        <h4>1.2.3 自回归模型（2016-2020）</h4>
+        <h3>1.2.3 自回归模型（2016-2020）</h3>
         <p>从 PixelCNN 到 Transformer 再到 GPT，自回归模型把生成问题转化为"逐个预测下一个 token"的序列问题。它对图像的建模方式是逐像素生成，对文本则逐 token 生成。优势是<strong>训练稳定、似然函数可精确计算</strong>；代价是生成速度慢（必须串行）。2025-2026 年，Emu3、OmniGen-AR 等模型证明了"next-token prediction"可以统一图像、视频、文本的生成与理解——自回归路线正在强势回归。</p>
 
-        <h4>1.2.4 扩散模型（2020-至今）</h4>
+        <h3>1.2.4 扩散模型（2020-至今）</h3>
         <p>DDPM（Denoising Diffusion Probabilistic Models）在 2020 年横空出世，它通过学习"往数据上加噪声再逆向去噪"的过程来生成样本。2022 年 Stable Diffusion 将其推向大众，2023 年 DiT 用 Transformer 取代了 U-Net，2024 年 SD3 和 FLUX 引入 Rectified Flow。到了 2026 年，扩散模型（及其变体 Flow Matching）已经成为<strong>图像和视频生成的事实标准</strong>，几乎所有商业级产品（Midjourney、DALL·E、Stable Diffusion、Flux）都基于这个路线。</p>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>四大流派不是互相取代的关系，而是互相启发、逐步融合。Stable Diffusion 使用 VAE 做潜空间压缩 + 扩散模型做去噪 + CLIP 做文本引导——这是一个"集大成者"。理解每一派的精髓，才能真正掌握现代 AIGC 技术栈。
         </div>
 
-        <h3>1.3 生成模型的时间线</h3>
+        <h2>1.3 生成模型的时间线</h2>
 
         <table>
             <tr><th>年份</th><th>里程碑</th><th>意义</th></tr>
@@ -106,7 +127,7 @@
             <tr><td>2026</td><td>OmniGen-AR、Gemini Omni、Seedance 2.5</td><td>多模态统一、4K 视频生成</td></tr>
         </table>
 
-        <h3>1.4 生成模型的应用全景</h3>
+        <h2>1.4 生成模型的应用全景</h2>
 
         <p>截至 2026 年上半年，生成模型已经渗透到几乎每一个内容创作领域：</p>
 
@@ -122,7 +143,7 @@
             <strong>⚠️ 一个真实的踩坑故事：</strong>2023 年我刚接触 Stable Diffusion 时，以为"只要会写 prompt 就能生成好图"。结果花了一周时间调 prompt，生成的结果总是肢体扭曲、手指畸形。后来才发现问题不在 prompt——我用的模型是 SD 1.5，它对人体结构的理解本就有缺陷，换用 SDXL + 人体姿态 ControlNet 后，第一次运行就生成了完美的人体。这个教训是：<strong>理解模型的底层能力边界，比调 prompt 重要一百倍。</strong>
         </div>
 
-        <h3>1.5 本教程的学习路线</h3>
+        <h2>1.5 本教程的学习路线</h2>
 
         <p>我们的 28 章教程按照"理论奠基 → 核心机制 → 多模态工程 → 进阶架构 → 实战工具 → 前沿项目"六个部分组织：</p>
 
@@ -162,12 +183,20 @@ image.save("my_first_aigc.png")</code></pre>
 
         <p>准备好了吗？让我们从第 2 章开始，一步步搭建你的 AIGC 知识体系。下一章，我们将深入概率生成模型的理论基础——理解"最大化似然"和"最小化 KL 散度"这两个贯穿所有生成模型的核心思想。</p>
 
-        <div class="footer-nav">
+        <h2>参考文献</h2>
+<ul class="source-list">
+    <li>Kingma &amp; Welling, <em>Auto-Encoding Variational Bayes</em>, 2013. <a href="https://arxiv.org/abs/1312.6114">arXiv:1312.6114</a></li>
+    <li>Goodfellow et al., <em>Generative Adversarial Networks</em>, NeurIPS 2014. <a href="https://arxiv.org/abs/1406.2661">arXiv:1406.2661</a></li>
+    <li>Ho et al., <em>Denoising Diffusion Probabilistic Models</em>, NeurIPS 2020. <a href="https://arxiv.org/abs/2006.11239">arXiv:2006.11239</a></li>
+    <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+</ul>
+
+<div class="footer-nav">
             <a href="javascript:void(0)">← 上一章</a>
             <a href="index.html">📖 返回目录</a>
             <a href="02.html">下一章 →</a>
         </div>
-    </div>
+    </main>
 </div>
 </div>
 </body>
