@@ -113,15 +113,42 @@
 
         <p>给定一对数据点 <code>(x_0, x_1)</code>，其中 <code>x_0 ∼ N(0, I)</code>（噪声），<code>x_1 ∼ p_data</code>（真实数据），我们定义线性插值路径：</p>
 
-        <pre><code>x_t = (1 - t) * x_0 + t * x_1,   t ∈ [0, 1]</code></pre>
+        <div class="math-equation" role="group" aria-label="线性插值路径">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="线性插值公式，可横向滚动">
+                <math display="block" aria-label="x_t 等于 (1 减 t) 乘 x_0 加 t 乘 x_1，t 在 0 到 1 之间">
+                    <msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo>)</mo><msub><mi>x</mi><mn>0</mn></msub>
+                    <mo>+</mo><mi>t</mi><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo>
+                    <mspace width="0.5em"></mspace><mi>t</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo>
+                </math>
+                <span class="eq-num">(20.1)</span>
+            </div>
+        </div>
 
         <p>沿着这条路径，速度（即 x_t 对 t 的导数）是常数：</p>
 
-        <pre><code>d(x_t)/dt = x_1 - x_0</code></pre>
+        <div class="math-equation" role="group" aria-label="路径的速度">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="速度公式，可横向滚动">
+                <math display="block" aria-label="d x_t 除以 d t 等于 x_1 减 x_0">
+                    <mfrac><mrow><mi>d</mi><msub><mi>x</mi><mi>t</mi></msub></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac>
+                    <mo>=</mo><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub>
+                </math>
+                <span class="eq-num">(20.2)</span>
+            </div>
+        </div>
 
         <p>训练目标就是让神经网络预测这个速度：</p>
 
-        <pre><code>L = E_{x_0, x_1, t} [ || v_θ(x_t, t) - (x_1 - x_0) ||^2 ]</code></pre>
+        <div class="math-equation" role="group" aria-label="速度预测的训练目标">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="速度回归损失，可横向滚动">
+                <math display="block" aria-label="L 等于 x_0、x_1、t 的期望：v_θ(x_t,t) 与 (x_1 减 x_0) 之差的二范数平方">
+                    <mi>L</mi><mo>=</mo>
+                    <msub><mi>E</mi><mrow><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>t</mi></mrow></msub><mo>[</mo>
+                    <msup><mrow><mo>‖</mo><msub><mi>v</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>−</mo><mo>(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo><mo>‖</mo></mrow><mn>2</mn></msup>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(20.3)</span>
+            </div>
+        </div>
 
         <div class="tip">
             <strong>💡 直觉理解：</strong>想象你站在位置 x_0（噪声），想去位置 x_1（图像）。线性插值路径就是"从起点直线走到终点"。Rectified Flow 就是训练一个模型，告诉它"无论你当前在哪里、在哪个时间点，你都应该沿着 x_1 - x_0 的方向走"。推理时，模型沿着自己预测的方向一步一步走向 x_1。
@@ -133,16 +160,35 @@
 
         <p>Flow Matching 的完整理论框架比 Rectified Flow 更一般化。设 <code>p_t(x)</code> 是时间 t 时的概率密度，我们希望学习一个速度场 <code>v_θ(x, t)</code> 来使概率密度沿着 ODE 演化。Flow Matching 的目标函数是：</p>
 
-        <pre><code># 无条件 Flow Matching 损失
-L_FM = E_{t ∼ U[0,1], x ∼ p_t(x)} [ || v_θ(x, t) - u_t(x) ||^2 ]
+        <p>其中 <math class="math-inline" aria-label="u_t(x) 是真实速度场"><msub><mi>u</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></math> 是“真实”速度场，但我们不知道它的闭式解。无条件 Flow Matching 的目标为：</p>
 
-# 其中 u_t(x) 是"真实"速度场，但我们不知道它的闭式解
+        <div class="math-equation" role="group" aria-label="无条件 Flow Matching 损失">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Flow Matching 损失，可横向滚动">
+                <math display="block" aria-label="L_FM 等于 t 均匀取自 0 到 1、x 服从 p_t(x) 时，v_θ(x,t) 与真实速度场 u_t(x) 之差的二范数平方">
+                    <msub><mi>L</mi><mtext>FM</mtext></msub><mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>t</mi><mo>∼</mo><mi>U</mi><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>,</mo><mi>x</mi><mo>∼</mo><msub><mi>p</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></msub><mo>[</mo>
+                    <msup><mrow><mo>‖</mo><msub><mi>v</mi><mi>θ</mi></msub><mo>(</mo><mi>x</mi><mo>,</mo><mi>t</mi><mo>)</mo><mo>−</mo><msub><mi>u</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>‖</mo></mrow><mn>2</mn></msup>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(20.4)</span>
+            </div>
+        </div>
 
-# 条件 Flow Matching 损失（关键创新！）
-L_CFM = E_{t, x_1, x ∼ p_t(x|x_1)} [ || v_θ(x, t) - u_t(x|x_1) ||^2 ]
+        <p>关键的创新是<strong>条件 Flow Matching</strong>（CFM）：把终点 <math class="math-inline" aria-label="x_1"><msub><mi>x</mi><mn>1</mn></msub></math> 作为条件：</p>
 
-# 这里 u_t(x|x_1) 是给定终点的条件速度场
-# 即 u_t(x|x_1) = (x_1 - x_0) / (1 - t) 对于线性路径</code></pre>
+        <div class="math-equation" role="group" aria-label="条件 Flow Matching 损失">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="条件 Flow Matching 损失，可横向滚动">
+                <math display="block" aria-label="L_CFM 等于 t、x_1、x 服从 p_t(x|x_1) 时，v_θ(x,t) 与条件速度场 u_t(x|x_1) 之差的二范数平方">
+                    <msub><mi>L</mi><mtext>CFM</mtext></msub><mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>t</mi><mo>,</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>x</mi><mo>∼</mo><msub><mi>p</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>|</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo></mrow></msub><mo>[</mo>
+                    <msup><mrow><mo>‖</mo><msub><mi>v</mi><mi>θ</mi></msub><mo>(</mo><mi>x</mi><mo>,</mo><mi>t</mi><mo>)</mo><mo>−</mo><msub><mi>u</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>|</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo><mo>‖</mo></mrow><mn>2</mn></msup>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(20.5)</span>
+            </div>
+        </div>
+
+        <p>这里 <math class="math-inline" aria-label="u_t(x|x_1) 是给定终点的条件速度场"><msub><mi>u</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>|</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo></math> 是给定终点的条件速度场，对线性路径有 <math class="math-inline" aria-label="u_t(x|x_1) 等于 (x_1 减 x_0) 除以 (1 减 t)"><msub><mi>u</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>|</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo><mo>=</mo><mfrac><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub></mrow><mrow><mn>1</mn><mo>−</mo><mi>t</mi></mrow></mfrac></math>。</p>
 
         <p>条件 Flow Matching 的伟大之处在于：通过引入条件信息，我们将一个无法直接计算的"全局速度场"问题，转化成了一个容易计算的"局部条件速度场"问题。而这个转化不改变最优解——条件 Flow Matching 和无条件 Flow Matching 共享同一个最优解 <code>v_θ*</code>。</p>
 

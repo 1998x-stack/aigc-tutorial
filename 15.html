@@ -130,6 +130,21 @@ loss_i = cross_entropy(logits, labels)    # 图像→文本方向
 loss_t = cross_entropy(logits.T, labels)   # 文本→图像方向
 loss = (loss_i + loss_t) / 2</code></pre>
 
+        <div class="math-equation" role="group" aria-label="InfoNCE 对比损失（单方向）">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="InfoNCE 公式，可横向滚动">
+                <math display="block" aria-label="L_i 等于负 log，分子为 exp(sim(i_i,t_i)/τ)，分母为 j 从 1 到 N 的 exp(sim(i_i,t_j)/τ) 求和">
+                    <msub><mi>L</mi><mi>i</mi></msub><mo>=</mo><mo>−</mo><mi>log</mi>
+                    <mfrac>
+                        <mrow><mi>exp</mi><mo>(</mo><mi>sim</mi><mo>(</mo><msub><mi>i</mi><mi>i</mi></msub><mo>,</mo><msub><mi>t</mi><mi>i</mi></msub><mo>)</mo><mo>/</mo><mi>τ</mi><mo>)</mo></mrow>
+                        <mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mi>exp</mi><mo>(</mo><mi>sim</mi><mo>(</mo><msub><mi>i</mi><mi>i</mi></msub><mo>,</mo><msub><mi>t</mi><mi>j</mi></msub><mo>)</mo><mo>/</mo><mi>τ</mi><mo>)</mo></mrow>
+                    </mfrac>
+                </math>
+                <span class="eq-num">(15.1)</span>
+            </div>
+        </div>
+
+        <p>其中 <math class="math-inline" aria-label="sim 为余弦相似度"><mi>sim</mi><mo>(</mo><mo>⋅</mo><mo>,</mo><mo>⋅</mo><mo>)</mo></math> 为归一化特征间的余弦相似度，<math class="math-inline" aria-label="τ 为温度系数"><mi>τ</mi></math> 为温度系数，<math class="math-inline" aria-label="N 为 batch 大小"><mi>N</mi></math> 为一个 batch 内的样本数。CLIP 最终损失对图像→文本与文本→图像两个方向取平均，即上面伪代码中的 <code>loss = (loss_i + loss_t) / 2</code>。</p>
+
         <p>这里有一个重要的超参数——<strong>温度系数</strong>（temperature，通常记作 τ 或 t）。它的作用是控制 softmax 分布的"尖锐程度"：τ 越小，softmax 输出分布越集中在最高分上，模型对负样本的惩罚越强；τ 越大，分布越平滑，梯度越温和。CLIP 论文发现 τ 对最终性能影响很大，最终选择让 τ 作为一个可学习的参数。</p>
 
         <div class="tip">
