@@ -75,13 +75,26 @@
 
         <p><strong>贝叶斯公式（Bayes' Theorem）</strong>：</p>
 
-        <pre><code>P(z|x) = P(x|z) * P(z) / P(x)
+        <div class="math-equation" role="group" aria-label="贝叶斯公式">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="贝叶斯公式，可横向滚动">
+                <math display="block" aria-label="P(z|x) 等于 P(x|z) 乘以 P(z) 除以 P(x)">
+                    <mi>P</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mfrac>
+                        <mrow><mi>P</mi><mo>(</mo><mi>x</mi><mo>|</mo><mi>z</mi><mo>)</mo><mi>P</mi><mo>(</mo><mi>z</mi><mo>)</mo></mrow>
+                        <mrow><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                    </mfrac>
+                </math>
+                <span class="eq-num">(2.1)</span>
+            </div>
+        </div>
 
-其中：
-  P(z|x)  —— 后验概率（给定数据 x 后潜变量 z 的分布）
-  P(x|z)  —— 似然（给定潜变量 z 时生成数据 x 的概率）
-  P(z)    —— 先验（对潜变量的预先假设，通常是标准正态分布）
-  P(x)    —— 证据（边际似然，通常是难计算的）</code></pre>
+        <ul>
+            <li><math class="math-inline" aria-label="P(z|x) 后验"><mi>P</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo></math> —— 后验概率（给定数据 x 后潜变量 z 的分布）</li>
+            <li><math class="math-inline" aria-label="P(x|z) 似然"><mi>P</mi><mo>(</mo><mi>x</mi><mo>|</mo><mi>z</mi><mo>)</mo></math> —— 似然（给定潜变量 z 时生成数据 x 的概率）</li>
+            <li><math class="math-inline" aria-label="P(z) 先验"><mi>P</mi><mo>(</mo><mi>z</mi><mo>)</mo></math> —— 先验（通常是标准正态分布）</li>
+            <li><math class="math-inline" aria-label="P(x) 证据"><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo></math> —— 证据（边际似然，通常难计算）</li>
+        </ul>
 
         <p>几乎所有生成模型都在玩这个公式：VAE 近似后验 P(z|x)，扩散模型学习 P(x_t | x_{t+1})，自回归模型分解 P(x) 为条件概率的连乘。</p>
 
@@ -101,22 +114,55 @@
 
         <p>给定 N 个独立同分布的样本 {x₁, x₂, ... , x_N}，似然函数为：</p>
 
-        <pre><code>L(θ) = ∏_{i=1}^{N} P_θ(x_i)
+        <div class="math-equation" role="group" aria-label="似然函数">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="似然函数，可横向滚动">
+                <math display="block" aria-label="L(θ) 等于 i 从 1 到 N 的连乘 P_θ(x_i)">
+                    <mi>L</mi><mo>(</mo><mi>θ</mi><mo>)</mo><mo>=</mo>
+                    <munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
+                    <msub><mi>P</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(2.4)</span>
+            </div>
+        </div>
 
-最大化 L(θ) 等价于最大化对数似然（取 log 后乘法变加法，更方便计算）：
-log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
+        <p>最大化 <math class="math-inline" aria-label="L 的 θ"><mi>L</mi><mo>(</mo><mi>θ</mi><mo>)</mo></math> 等价于最大化对数似然（取 <math class="math-inline" aria-label="log"><mi>log</mi></math> 后乘法变加法，更方便计算）：</p>
 
-θ* = argmax_θ ∑ log P_θ(x_i)</code></pre>
+        <div class="math-equation" role="group" aria-label="对数似然">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="对数似然，可横向滚动">
+                <math display="block" aria-label="log L(θ) 等于 i 从 1 到 N 求和 log P_θ(x_i)">
+                    <mi>log</mi><mi>L</mi><mo>(</mo><mi>θ</mi><mo>)</mo><mo>=</mo>
+                    <munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
+                    <mi>log</mi><msub><mi>P</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(2.5)</span>
+            </div>
+        </div>
+
+        <p>最优参数为 <math class="math-inline" aria-label="θ 星 等于 使求和 log P_θ(x_i) 最大的 θ"><msup><mi>θ</mi><mo>*</mo></msup><mo>=</mo><munder><mi>argmax</mi><mi>θ</mi></munder><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mi>log</mi><msub><mi>P</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo></math>。</p>
 
         <p>你可能会问：这和"最小化两个分布的差异"有什么关系？</p>
 
         <p>答案就在下面这个等价关系：<strong>最大化对数似然等价于最小化 KL 散度</strong>。推导非常简洁：</p>
 
-        <pre><code>KL(P_data || P_θ) = ∫ P_data(x) log [P_data(x) / P_θ(x)] dx
-                  = ∫ P_data(x) log P_data(x) dx - ∫ P_data(x) log P_θ(x) dx
-                  = -H(P_data) + CrossEntropy(P_data, P_θ)
+        <div class="math-equation" role="group" aria-label="对数似然与 KL 散度的等价关系">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="KL 散度展开式，可横向滚动">
+                <math display="block" aria-label="KL(P_data 平行 P_θ) 等于 P_data 与 P_θ 的叉熵减去 P_data 的熵，即负熵加叉熵">
+                    <mi>KL</mi><mo>(</mo><msub><mi>P</mi><mtext>data</mtext></msub><mo>‖</mo><msub><mi>P</mi><mi>θ</mi></msub><mo>)</mo>
+                    <mo>=</mo>
+                    <mo>∫</mo><msub><mi>P</mi><mtext>data</mtext></msub><mo>(</mo><mi>x</mi><mo>)</mo><mi>log</mi>
+                    <mfrac>
+                        <mrow><msub><mi>P</mi><mtext>data</mtext></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                        <mrow><msub><mi>P</mi><mi>θ</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                    </mfrac>
+                    <mo>d</mo><mi>x</mi>
+                    <mo>=</mo><mo>−</mo><mi>H</mi><mo>(</mo><msub><mi>P</mi><mtext>data</mtext></msub><mo>)</mo>
+                    <mo>+</mo><mtext>CE</mtext><mo>(</mo><msub><mi>P</mi><mtext>data</mtext></msub><mo>,</mo><msub><mi>P</mi><mi>θ</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(2.6)</span>
+            </div>
+        </div>
 
-最小化 KL 散度 → 最小化交叉熵 → 最大化 ∑ log P_θ(x_i)</code></pre>
+        <p>最小化 KL 散度 → 最小化交叉熵 → 最大化 <math class="math-inline" aria-label="求和 log P_θ(x_i)"><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mi>log</mi><msub><mi>P</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo></math>。</p>
 
         <p>换句话说，<strong>MLE = 最小化模型分布与真实分布之间的 KL 散度</strong>。这个等式是所有生成模型的逻辑起点。</p>
 
@@ -128,8 +174,21 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
 
         <p><strong>KL 散度</strong>（Kullback-Leibler Divergence）也叫相对熵，衡量两个概率分布 P 和 Q 之间的差异：</p>
 
-        <pre><code>KL(P || Q) = ∫ P(x) log [P(x) / Q(x)] dx
-           = E_{x~P}[log P(x) - log Q(x)]</code></pre>
+        <div class="math-equation" role="group" aria-label="KL 散度定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="KL 散度公式，可横向滚动">
+                <math display="block" aria-label="KL(P 平行 Q) 等于积分 P(x) 乘 log(P(x) 除以 Q(x)) 对 x 的积分">
+                    <mi>KL</mi><mo>(</mo><mi>P</mi><mo>‖</mo><mi>Q</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mo>∫</mo>
+                    <mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo><mi>log</mi>
+                    <mfrac><mrow><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mrow><mi>Q</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac>
+                    <mo>d</mo><mi>x</mi>
+                </math>
+                <span class="eq-num">(2.2)</span>
+            </div>
+        </div>
+
+        <p>等价地，写成期望形式：<math class="math-inline" aria-label="KL(P 平行 Q) 等于 x 服从 P 时 log P(x) 减 log Q(x) 的期望"><mi>KL</mi><mo>(</mo><mi>P</mi><mo>‖</mo><mi>Q</mi><mo>)</mo><mo>=</mo><msub><mi>E</mi><mrow><mi>x</mi><mo>∼</mo><mi>P</mi></mrow></msub><mo>[</mo><mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>−</mo><mi>log</mi><mi>Q</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>]</mo></math>。</p>
 
         <p>KL 散度有三个重要性质：</p>
         <ul>
@@ -142,12 +201,26 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
 
         <p><strong>JS 散度</strong>（Jensen-Shannon Divergence）是 KL 散度的对称版本：</p>
 
-        <pre><code>JS(P || Q) = ½ KL(P || M) + ½ KL(Q || M)，其中 M = (P + Q) / 2
+        <div class="math-equation" role="group" aria-label="JS 散度定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="JS 散度公式，可横向滚动">
+                <math display="block" aria-label="JS(P 平行 Q) 等于二分之一 KL(P 平行 M) 加二分之一 KL(Q 平行 M)，其中 M 等于 (P+Q)/2">
+                    <mi>JS</mi><mo>(</mo><mi>P</mi><mo>‖</mo><mi>Q</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mfrac><mn>1</mn><mn>2</mn></mfrac><mi>KL</mi><mo>(</mo><mi>P</mi><mo>‖</mo><mi>M</mi><mo>)</mo>
+                    <mo>+</mo>
+                    <mfrac><mn>1</mn><mn>2</mn></mfrac><mi>KL</mi><mo>(</mo><mi>Q</mi><mo>‖</mo><mi>M</mi><mo>)</mo>
+                    <mo>,</mo><mspace width="0.4em"></mspace>
+                    <mi>M</mi><mo>=</mo><mfrac><mrow><mi>P</mi><mo>+</mo><mi>Q</mi></mrow><mn>2</mn></mfrac>
+                </math>
+                <span class="eq-num">(2.3)</span>
+            </div>
+        </div>
 
-性质：
-  - 对称：JS(P || Q) = JS(Q || P)
-  - 有界：0 ≤ JS(P || Q) ≤ log 2
-  - 平方根 JS 散度是距离度量</code></pre>
+        <ul>
+            <li><strong>对称</strong>：<math class="math-inline" aria-label="JS 对称"><mi>JS</mi><mo>(</mo><mi>P</mi><mo>‖</mo><mi>Q</mi><mo>)</mo><mo>=</mo><mi>JS</mi><mo>(</mo><mi>Q</mi><mo>‖</mo><mi>P</mi><mo>)</mo></math></li>
+            <li><strong>有界</strong>：<math class="math-inline" aria-label="0 小于等于 JS 小于等于 log 2"><mn>0</mn><mo>≤</mo><mi>JS</mi><mo>(</mo><mi>P</mi><mo>‖</mo><mi>Q</mi><mo>)</mo><mo>≤</mo><mi>log</mi><mn>2</mn></math></li>
+            <li><strong>平方根 JS 散度</strong>是一个距离度量</li>
+        </ul>
 
         <div class="tip">
             <strong>💡 直觉理解：</strong>KL 散度像一把"有方向的尺子"——从 P 到 Q 和从 Q 到 P 的读数不一样。JS 散度去掉方向，直接给出一个对称的差异值。GAN 的原始论文证明，当判别器训练到最优时，生成器实际上在最小化 JS 散度。
@@ -161,13 +234,36 @@ log L(θ) = ∑_{i=1}^{N} log P_θ(x_i)
 
         <p>怎么衡量"近似程度"？又是 KL 散度！我们希望最小化 KL(Q(z|x) || P(z|x))。但这又绕回去了——要算这个 KL，我们需要 P(z|x)，而它正是我们算不出来的。所以 VI 用了一个巧妙的变换：</p>
 
-        <pre><code>log P(x) = KL(Q(z|x) || P(z|x)) + ELBO
+        <div class="math-equation" role="group" aria-label="对数证据分解为 KL 与 ELBO">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="ELBO 分解公式，可横向滚动">
+                <math display="block" aria-label="log P(x) 等于 KL(Q(z|x) 平行 P(z|x)) 加 ELBO">
+                    <mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mi>KL</mi><mo>(</mo><mi>Q</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>‖</mo><mi>P</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>)</mo>
+                    <mo>+</mo><mtext>ELBO</mtext>
+                </math>
+                <span class="eq-num">(2.7)</span>
+            </div>
+        </div>
 
-其中 ELBO = E_{z~Q}[log P(x|z)] - KL(Q(z|x) || P(z))
+        <div class="math-equation" role="group" aria-label="ELBO 的定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="ELBO 定义公式，可横向滚动">
+                <math display="block" aria-label="ELBO 等于 z 服从 Q 时 log P(x|z) 的期望，减去 KL(Q(z|x) 平行 P(z))">
+                    <mtext>ELBO</mtext><mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>z</mi><mo>∼</mo><mi>Q</mi></mrow></msub>
+                    <mo>[</mo><mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>|</mo><mi>z</mi><mo>)</mo><mo>]</mo>
+                    <mo>−</mo>
+                    <mi>KL</mi><mo>(</mo><mi>Q</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>‖</mo><mi>P</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo>
+                </math>
+                <span class="eq-num">(2.8)</span>
+            </div>
+        </div>
 
-因为 KL ≥ 0，所以 log P(x) ≥ ELBO。最大化 ELBO 等价于：
-  - 最小化 KL(Q || P)（让近似后验接近真实后验）
-  - 最大化 log P(x)（最大化数据的似然）</code></pre>
+        <p>因为 <math class="math-inline" aria-label="KL 大于等于 0"><mi>KL</mi><mo>≥</mo><mn>0</mn></math>，所以 <math class="math-inline" aria-label="log P(x) 大于等于 ELBO"><mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>≥</mo><mtext>ELBO</mtext></math>。最大化 ELBO 等价于：</p>
+        <ul>
+            <li>最小化 <math class="math-inline" aria-label="KL(Q 平行 P)"><mi>KL</mi><mo>(</mo><mi>Q</mi><mo>‖</mo><mi>P</mi><mo>)</mo></math>（让近似后验接近真实后验）</li>
+            <li>最大化 <math class="math-inline" aria-label="log P(x)"><mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo></math>（最大化数据的似然）</li>
+        </ul>
 
         <p><strong>ELBO</strong>（Evidence Lower Bound，证据下界）的分解非常优美：</p>
         <ul>
