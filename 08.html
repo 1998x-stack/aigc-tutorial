@@ -97,7 +97,19 @@
 
         <p>每一步的转移概率定义为：</p>
 
-        <pre><code>q(x_t | x_{t-1}) := N(x_t; √(1 - β_t) · x_{t-1}, β_t · I)</code></pre>
+        <div class="math-equation" role="group" aria-label="前向过程单步转移">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="前向转移公式，可横向滚动">
+                <math display="block" aria-label="q(x_t 给定 x_{t-1}) 定义为正态分布，均值为根号(1-β_t) 乘 x_{t-1}，方差为 β_t 乘单位阵">
+                    <mi>q</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>|</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo>
+                    <mo>:=</mo>
+                    <mi>N</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>;</mo>
+                    <msqrt><mrow><mn>1</mn><mo>−</mo><msub><mi>β</mi><mi>t</mi></msub></mrow></msqrt>
+                    <mo>⋅</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo>
+                    <msub><mi>β</mi><mi>t</mi></msub><mi mathvariant="bold">I</mi><mo>)</mo>
+                </math>
+                <span class="eq-num">(8.1)</span>
+            </div>
+        </div>
 
         <p>其中 β_t 是一个在 0 到 1 之间的值，称为"噪声系数"——它控制了每一步加多少噪声。t 越大，β_t 通常越大（因为要给图像加更多的噪声，直到完全破坏原始信息）。全部 β_t 的序列 {β_1, β_2, ..., β_T} 称为"噪声调度"（Noise Schedule）。</p>
 
@@ -105,11 +117,41 @@
 
         <p>前向过程有一个非常好的性质：由于每一步都是高斯分布，我们可以直接从 x₀ 一步计算出任意 t 步后的 x_t，而不需要迭代 T 步：</p>
 
-        <pre><code>定义 α_t := 1 - β_t,  ᾱ_t := ∏_{s=1}^{t} α_s
+        <div class="math-equation" role="group" aria-label="α 与 ᾱ 的定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="alpha 定义，可横向滚动">
+                <math display="block" aria-label="定义 α_t 等于 1 减 β_t，ᾱ_t 等于 s 从 1 到 t 的 α_s 连乘">
+                    <msub><mi>α</mi><mi>t</mi></msub><mo>:=</mo><mn>1</mn><mo>−</mo><msub><mi>β</mi><mi>t</mi></msub>
+                    <mo>,</mo><mspace width="0.6em"></mspace>
+                    <msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub><mo>:=</mo>
+                    <munderover><mo>∏</mo><mrow><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mi>t</mi></munderover>
+                    <msub><mi>α</mi><mi>s</mi></msub>
+                </math>
+                <span class="eq-num">(8.2)</span>
+            </div>
+        </div>
 
-则 q(x_t | x_0) = N(x_t; √(ᾱ_t) · x_0, (1 - ᾱ_t) · I)
+        <div class="math-equation" role="group" aria-label="一步到位采样公式">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="一步采样公式，可横向滚动">
+                <math display="block" aria-label="q(x_t 给定 x_0) 为正态分布，均值为根号 ᾱ_t 乘 x_0，方差为 1 减 ᾱ_t">
+                    <mi>q</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>|</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo>
+                    <mo>=</mo>
+                    <mi>N</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>;</mo>
+                    <msqrt><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></msqrt>
+                    <mo>⋅</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo>
+                    <mo>(</mo><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub><mo>)</mo>
+                    <mi mathvariant="bold">I</mi><mo>)</mo>
+                    <mo>,</mo><mspace width="0.6em"></mspace>
+                    <msub><mi>x</mi><mi>t</mi></msub><mo>=</mo>
+                    <msqrt><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></msqrt>
+                    <mo>⋅</mo><msub><mi>x</mi><mn>0</mn></msub><mo>+</mo>
+                    <msqrt><mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></mrow></msqrt>
+                    <mo>⋅</mo><mi>ε</mi>
+                </math>
+                <span class="eq-num">(8.3)</span>
+            </div>
+        </div>
 
-或者写为：x_t = √(ᾱ_t) · x_0 + √(1 - ᾱ_t) · ε,  其中 ε ∼ N(0, I)</code></pre>
+        <p>其中 <math class="math-inline" aria-label="ε 服从标准正态"><mi>ε</mi><mo>∼</mo><mi>N</mi><mo>(</mo><mn>0</mn><mo>,</mo><mi mathvariant="bold">I</mi><mo>)</mo></math>。</p>
 
         <p>这个"一步到位的公式"非常关键——它让我们在训练时不需要逐步迭代，可以直接在任意时间步 t 计算含噪图像 x_t 和噪声 ε 之间的关系，从而高效地训练去噪网络。</p>
 
@@ -119,16 +161,59 @@
 
         <p>反向过程的转移概率也被参数化为高斯分布：</p>
 
-        <pre><code>p_θ(x_{t-1} | x_t) := N(x_{t-1}; μ_θ(x_t, t), Σ_θ(x_t, t))</code></pre>
+        <div class="math-equation" role="group" aria-label="反向过程参数化">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="反向过程公式，可横向滚动">
+                <math display="block" aria-label="p_θ(x_{t-1} 给定 x_t) 为正态分布，均值为 μ_θ(x_t,t)，协方差为 Σ_θ(x_t,t)">
+                    <msub><mi>p</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo>
+                    <mo>:=</mo>
+                    <mi>N</mi><mo>(</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>;</mo>
+                    <msub><mi>μ</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>,</mo>
+                    <msub><mi>Σ</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>)</mo>
+                </math>
+                <span class="eq-num">(8.4)</span>
+            </div>
+        </div>
 
         <p>在 DDPM 中，Σ_θ 被固定为 σ_t² · I（不学习），所以模型只需要学习均值 μ_θ(x_t, t)。</p>
 
         <p>那么，μ_θ(x_t, t) 的优化目标是什么？我们可以将反向过程与"真实后验"（即给定 x_t 和 x₀ 的情况下，x_{t-1} 的条件分布）对齐。这个真实后验可以被解析地计算出来：</p>
 
-        <pre><code>q(x_{t-1} | x_t, x_0) = N(x_{t-1}; μ̃_t(x_t, x_0), σ_t² · I)
+        <div class="math-equation" role="group" aria-label="真实后验的形式">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="真实后验公式，可横向滚动">
+                <math display="block" aria-label="q(x_{t-1} 给定 x_t 和 x_0) 为正态分布，均值为 μ 波浪 t(x_t, x_0)，协方差为 σ_t 平方">
+                    <mi>q</mi><mo>(</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo>
+                    <mo>=</mo>
+                    <mi>N</mi><mo>(</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>;</mo>
+                    <msub><mover><mi>μ</mi><mo>~</mo></mover><mi>t</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo><mo>,</mo>
+                    <msubsup><mi>σ</mi><mi>t</mi><mn>2</mn></msubsup>
+                    <mo>⋅</mo><mi mathvariant="bold">I</mi><mo>)</mo>
+                </math>
+                <span class="eq-num">(8.5)</span>
+            </div>
+        </div>
 
-其中 μ̃_t(x_t, x_0) = (√(α_t) · (1 - ᾱ_{t-1}) / (1 - ᾱ_t)) · x_t
-                    + (√(ᾱ_{t-1}) · β_t / (1 - ᾱ_t)) · x_0</code></pre>
+        <p>其中后验均值为：</p>
+
+        <div class="math-equation" role="group" aria-label="真实后验均值">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="后验均值公式，可横向滚动">
+                <math display="block" aria-label="μ 波浪 t 等于 根号 α_t 乘(1 减 ᾱ_{t-1}) 除以 (1 减 ᾱ_t) 乘 x_t，加上 根号 ᾱ_{t-1} 乘 β_t 除以 (1 减 ᾱ_t) 乘 x_0">
+                    <msub><mover><mi>μ</mi><mo>~</mo></mover><mi>t</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo>
+                    <mo>=</mo>
+                    <mfrac>
+                        <mrow><msqrt><msub><mi>α</mi><mi>t</mi></msub></msqrt><mo>(</mo><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow>
+                        <mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></mrow>
+                    </mfrac>
+                    <msub><mi>x</mi><mi>t</mi></msub>
+                    <mo>+</mo>
+                    <mfrac>
+                        <mrow><msqrt><msub><mover><mi>α</mi><mo>¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></msqrt><msub><mi>β</mi><mi>t</mi></msub></mrow>
+                        <mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></mrow>
+                    </mfrac>
+                    <msub><mi>x</mi><mn>0</mn></msub>
+                </math>
+                <span class="eq-num">(8.6)</span>
+            </div>
+        </div>
 
         <p>但 x₀ 我们不知道（因为它是我们要生成的！）。所以我们用 x_t 和去噪网络来估计 x₀ 从而得到 μ_θ。</p>
 
@@ -140,8 +225,22 @@
 
         <p>DDPM 的训练通过优化"变分下界"（Variational Lower Bound, VLB）来进行。VLB 是数据对数似然的下界，最大化似然等价于最小化负对数似然的上界：</p>
 
-        <pre><code>L_VLB = E_q[ -log p_θ(x_0 | x_1) + Σ_{t=2}^{T} D_KL(q(x_{t-1}|x_t,x_0) || p_θ(x_{t-1}|x_t))
-                + D_KL(q(x_T|x_0) || p(x_T)) ]</code></pre>
+        <div class="math-equation" role="group" aria-label="变分下界 VLB">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="VLB 公式，可横向滚动">
+                <math display="block" aria-label="L_VLB 等于 q 的期望：负 log p_θ(x_0|x_1)，加 t 从 2 到 T 的 KL 散度求和，加最后的先验匹配 KL">
+                    <msub><mi>L</mi><mtext>VLB</mtext></msub><mo>=</mo>
+                    <msub><mi>E</mi><mi>q</mi></msub><mo>[</mo>
+                    <mo>−</mo><mi>log</mi><msub><mi>p</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>|</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo>
+                    <mo>+</mo>
+                    <munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>2</mn></mrow><mi>T</mi></munderover>
+                    <msub><mi>D</mi><mtext>KL</mtext></msub><mo>(</mo><mi>q</mi><mo>(</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo><mo>‖</mo><msub><mi>p</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo><mo>)</mo>
+                    <mo>+</mo>
+                    <msub><mi>D</mi><mtext>KL</mtext></msub><mo>(</mo><mi>q</mi><mo>(</mo><msub><mi>x</mi><mi>T</mi></msub><mo>|</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo><mo>‖</mo><mi>p</mi><mo>(</mo><msub><mi>x</mi><mi>T</mi></msub><mo>)</mo><mo>)</mo>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(8.7)</span>
+            </div>
+        </div>
 
         <p>这个表达式有三项：</p>
         <ul>
@@ -152,13 +251,33 @@
 
         <p>关键来了：DDPM 的论文发现，直接优化这些 KL 散度可以简化为一个非常优雅的形式。由于前向过程和反向过程都是高斯分布，KL 散度有闭式解。最终，对于每个时间步 t 的损失可以简化为：</p>
 
-        <pre><code>L_t = E_{t, x₀, ε}[ || ε - ε_θ(√(ᾱ_t) · x₀ + √(1 - ᾱ_t) · ε, t) ||² ]</code></pre>
+        <div class="math-equation" role="group" aria-label="单时间步损失">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="单步损失公式，可横向滚动">
+                <math display="block" aria-label="L_t 等于 t、x_0、ε 下，噪声 ε 与 ε_θ(根号 ᾱ_t 乘 x_0 加 根号(1-ᾱ_t) 乘 ε, t) 之差的二范数平方的期望">
+                    <msub><mi>L</mi><mi>t</mi></msub><mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>t</mi><mo>,</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><mi>ε</mi></mrow></msub><mo>[</mo>
+                    <msup><mrow><mo>‖</mo><mi>ε</mi><mo>−</mo><msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msqrt><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></msqrt><msub><mi>x</mi><mn>0</mn></msub><mo>+</mo><msqrt><mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></mrow></msqrt><mi>ε</mi><mo>,</mo><mi>t</mi><mo>)</mo><mo>‖</mo></mrow><mn>2</mn></msup>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(8.8)</span>
+            </div>
+        </div>
 
         <p>这个公式的含义极其直观：给定随机噪声 ε 和时间步 t，模型 ε_θ 需要预测出加在图像上的噪声 ε 是什么。整个损失函数就是<strong>预测的噪声和真实噪声之间的均方误差</strong>。</p>
 
         <p>最终 DDPM 使用的简化损失函数是：</p>
 
-        <pre><code>L_simple = E_{t ∼ [1,T], x₀, ε ∼ N(0,I)}[ || ε - ε_θ(x_t, t) ||² ]</code></pre>
+        <div class="math-equation" role="group" aria-label="简化损失函数">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="简化损失公式，可横向滚动">
+                <math display="block" aria-label="L_simple 等于 t 均匀取自 1 到 T、x_0 与 ε 服从标准正态时，噪声 ε 与 ε_θ(x_t, t) 之差的二范数平方的期望">
+                    <msub><mi>L</mi><mtext>simple</mtext></msub><mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>t</mi><mo>∼</mo><mo>[</mo><mn>1</mn><mo>,</mo><mi>T</mi><mo>]</mo><mo>,</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><mi>ε</mi><mo>∼</mo><mi>N</mi><mo>(</mo><mn>0</mn><mo>,</mo><mi mathvariant="bold">I</mi><mo>)</mo></mrow></msub><mo>[</mo>
+                    <msup><mrow><mo>‖</mo><mi>ε</mi><mo>−</mo><msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>‖</mo></mrow><mn>2</mn></msup>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(8.9)</span>
+            </div>
+        </div>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>L_simple 的形式简单到令人惊讶——它就是一个噪声预测的 MSE。但它的数学推导过程包含了"变分推断、KL 散度化简、重参数化"等一系列深刻思想。这就是 DDPM 的优雅之处：<strong>复杂的数学推导最终导向一个极其简单的训练目标</strong>。
