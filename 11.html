@@ -138,6 +138,26 @@
             <strong>🌟 核心洞察：</strong>CFG 范式从根本上改变了条件生成的方式。它用"条件预测减去无条件预测"来近似 Classifier Guidance 中的"分类器梯度"方向——这个差向量捕捉了"prompt 想要什么"的信息。w 越大，模型就越倾向于采样那些"更符合 prompt"的 region，但代价是多样性下降。
         </div>
 
+        <section class="widget" aria-labelledby="cfg-widget-title">
+            <h3 id="cfg-widget-title">交互：CFG 尺度 w 对生成的影响</h3>
+            <p>选择不同的 CFG 尺度 <math class="math-inline" aria-label="w CFG 尺度"><mi>w</mi></math>，观察噪声预测的构成与典型现象。以下为教学定性说明，非实拍对比。</p>
+            <div class="widget-controls" role="group" aria-label="选择 CFG 尺度">
+                <button type="button" class="cfg-btn" data-w="1">w = 1.0</button>
+                <button type="button" class="cfg-btn" data-w="7">w = 7.0</button>
+                <button type="button" class="cfg-btn" data-w="15">w = 15.0</button>
+            </div>
+            <div class="cfg-panel" data-w="1">
+                <p><strong>w = 1.0（无引导）：</strong>公式退化为 <math class="math-inline" aria-label="ε帽 等于条件预测"><msub><mover><mi>ε</mi><mo>^</mo></mover><mi>θ</mi></msub><mo>=</mo><msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>y</mi><mo>)</mo></math>，prompt 遵守度最低，但多样性最高。</p>
+            </div>
+            <div class="cfg-panel" data-w="7">
+                <p><strong>w = 7.0（常用区间）：</strong>在“条件预测减无条件预测”方向上适度外推，prompt 遵守度与多样性较平衡（SD 默认约 7.5）。</p>
+            </div>
+            <div class="cfg-panel" data-w="15">
+                <p><strong>w = 15.0（过强）：</strong>强外推会过度放大条件方向，容易出现色彩过饱和、细节崩坏与多样性明显下降。</p>
+            </div>
+            <noscript><p>未启用 JavaScript 时，上述三种尺度会同时显示，控制按钮不起作用。</p></noscript>
+        </section>
+
         <h2>11.3 CFG 尺度 w 的选择</h2>
 
         <p>CFG 尺度 w 是最重要的推理超参数之一。它的选择直接影响生成质量：</p>
@@ -240,5 +260,24 @@ text_emb = text_encoder(tokens.input_ids)[0]  # → [1, 77, 768]
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var buttons = document.querySelectorAll('.cfg-btn');
+    var panels = document.querySelectorAll('.cfg-panel');
+    if (!buttons.length || !panels.length) { return; }
+    function select(w) {
+        buttons.forEach(function (b) {
+            b.setAttribute('aria-pressed', String(b.getAttribute('data-w') === w));
+        });
+        panels.forEach(function (p) {
+            p.hidden = p.getAttribute('data-w') !== w;
+        });
+    }
+    buttons.forEach(function (b) {
+        b.addEventListener('click', function () { select(b.getAttribute('data-w')); });
+    });
+    select('7');
+})();
+</script>
 </body>
 </html>
