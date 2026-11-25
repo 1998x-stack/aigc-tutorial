@@ -98,19 +98,41 @@
 
         <p>GAN 的数学表述非常优雅，Goodfellow 将其写成了一个 minimax（极小极大）目标函数：</p>
 
-        <pre><code>min_G max_D V(D, G) = E_{x~P_data}[log D(x)] + E_{z~P_z}[log(1 - D(G(z)))]
+        <div class="math-equation" role="group" aria-label="GAN 的极小极大目标函数">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="minimax 目标函数，可横向滚动">
+                <math display="block" aria-label="min 在 G 上 max 在 D 上 V(D,G) 等于 x 服从 P_data 时 log D(x) 的期望 加上 z 服从 P_z 时 log(1 减 D(G(z))) 的期望">
+                    <munder><mi>min</mi><mi>G</mi></munder>
+                    <munder><mi>max</mi><mi>D</mi></munder>
+                    <mi>V</mi><mo>(</mo><mi>D</mi><mo>,</mo><mi>G</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>x</mi><mo>∼</mo><msub><mi>P</mi><mtext>data</mtext></msub></mrow></msub><mo>[</mo><mi>log</mi><mi>D</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>]</mo>
+                    <mo>+</mo>
+                    <msub><mi>E</mi><mrow><mi>z</mi><mo>∼</mo><msub><mi>P</mi><mi>z</mi></msub></mrow></msub><mo>[</mo><mi>log</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>D</mi><mo>(</mo><mi>G</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo><mo>)</mo><mo>]</mo>
+                </math>
+                <span class="eq-num">(4.1)</span>
+            </div>
+        </div>
 
-从判别器 D 的视角看：
-  - 对于真实样本 x：希望 D(x) → 1，即 log D(x) → 0（最大）
-  - 对于生成样本 G(z)：希望 D(G(z)) → 0，即 log(1 - D(G(z))) → 0（最大）
-  - 所以 D 要做 argmax_D V(D, G)
+        <p>从判别器 <math class="math-inline" aria-label="D"><mi>D</mi></math> 的视角看：</p>
+        <ul>
+            <li>对真实样本 <math class="math-inline" aria-label="x"><mi>x</mi></math>：希望 <math class="math-inline" aria-label="D(x) 趋于 1"><mi>D</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>→</mo><mn>1</mn></math>，即 <math class="math-inline" aria-label="log D(x) 最大"><mi>log</mi><mi>D</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>→</mo><mn>0</mn></math>（最大）</li>
+            <li>对生成样本 <math class="math-inline" aria-label="G(z)"><mi>G</mi><mo>(</mo><mi>z</mi><mo>)</mo></math>：希望 <math class="math-inline" aria-label="D(G(z)) 趋于 0"><mi>D</mi><mo>(</mo><mi>G</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo><mo>→</mo><mn>0</mn></math>，即 <math class="math-inline" aria-label="log(1-D(G(z))) 最大"><mi>log</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>D</mi><mo>(</mo><mi>G</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo><mo>)</mo><mo>→</mo><mn>0</mn></math></li>
+            <li>所以 <math class="math-inline" aria-label="D 做 argmax"><mi>D</mi><mo>=</mo><munder><mi>argmax</mi><mi>D</mi></munder><mi>V</mi><mo>(</mo><mi>D</mi><mo>,</mo><mi>G</mi><mo>)</mo></math></li>
+        </ul>
 
-从生成器 G 的视角看：
-  - 希望 D(G(z)) → 1，即 log(1 - D(G(z))) → -∞（最小）
-  - 所以 G 要做 argmin_G V(D, G)
+        <p>从生成器 <math class="math-inline" aria-label="G"><mi>G</mi></math> 的视角看：希望 <math class="math-inline" aria-label="D(G(z)) 趋于 1"><mi>D</mi><mo>(</mo><mi>G</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo><mo>→</mo><mn>1</mn></math>，即 <math class="math-inline" aria-label="log(1-D(G(z))) 趋于负无穷"><mi>log</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>D</mi><mo>(</mo><mi>G</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo><mo>)</mo><mo>→</mo><mo>−</mo><mi>∞</mi></math>（最小）。两者对抗，这是一个 minimax 博弈：</p>
 
-两者对抗，这是一个 minimax 博弈：
-  G* = argmin_G argmax_D V(D, G)</code></pre>
+        <div class="math-equation" role="group" aria-label="GAN 的均衡解">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="均衡解，可横向滚动">
+                <math display="block" aria-label="G 星 等于 在 G 上取 argmin、在 D 上取 argmax 的 V(D,G)">
+                    <msup><mi>G</mi><mo>*</mo></msup><mo>=</mo>
+                    <munder><mi>argmin</mi><mi>G</mi></munder>
+                    <munder><mi>argmax</mi><mi>D</mi></munder>
+                    <mi>V</mi><mo>(</mo><mi>D</mi><mo>,</mo><mi>G</mi><mo>)</mo>
+                </math>
+                <span class="eq-num">(4.2)</span>
+            </div>
+        </div>
 
         <p>实际训练时，log(1 - D(G(z))) 在早期梯度太小（判别器太容易赢），所以通常使用 "log D" 的技巧——不让 G 最小化 log(1-D)，而是最大化 log(D(G(z)))，梯度信号更强。</p>
 
@@ -146,17 +168,36 @@
 
         <p>步骤 1：对于固定的 G，最优判别器为：</p>
 
-        <pre><code>D*(x) = P_data(x) / (P_data(x) + P_g(x))
+        <div class="math-equation" role="group" aria-label="最优判别器">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="最优判别器公式，可横向滚动">
+                <math display="block" aria-label="D 星(x) 等于 P_data(x) 除以 (P_data(x) 加 P_g(x))">
+                    <msup><mi>D</mi><mo>*</mo></msup><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo>
+                    <mfrac>
+                        <mrow><msub><mi>P</mi><mtext>data</mtext></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                        <mrow><msub><mi>P</mi><mtext>data</mtext></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><msub><mi>P</mi><mi>g</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                    </mfrac>
+                </math>
+                <span class="eq-num">(4.3)</span>
+            </div>
+        </div>
 
-直观理解：如果 P_data(x) >> P_g(x)，D*(x) → 1（非常确信这是真的）
-         如果 P_g(x) >> P_data(x)，D*(x) → 0（非常确信这是假的）</code></pre>
+        <p>直观理解：如果 <math class="math-inline" aria-label="P_data 远大于 P_g"><msub><mi>P</mi><mtext>data</mtext></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>≫</mo><msub><mi>P</mi><mi>g</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></math>，则 <math class="math-inline" aria-label="D 星 趋于 1"><msup><mi>D</mi><mo>*</mo></msup><mo>(</mo><mi>x</mi><mo>)</mo><mo>→</mo><mn>1</mn></math>（确信这是真的）；反之 <math class="math-inline" aria-label="D 星 趋于 0"><msup><mi>D</mi><mo>*</mo></msup><mo>(</mo><mi>x</mi><mo>)</mo><mo>→</mo><mn>0</mn></math>（确信这是假的）。</p>
 
         <p>步骤 2：将 D* 代入目标函数，经过推导可得：</p>
 
-        <pre><code>min_G V(D*, G) = -2 log 2 + 2 * JS(P_data || P_g)
+        <div class="math-equation" role="group" aria-label="最优判别器下生成器的目标">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="最优解下目标函数公式，可横向滚动">
+                <math display="block" aria-label="min 在 G 上 V(D星,G) 等于 负 2 log 2 加 2 乘 JS(P_data 平行 P_g)">
+                    <munder><mi>min</mi><mi>G</mi></munder>
+                    <mi>V</mi><mo>(</mo><msup><mi>D</mi><mo>*</mo></msup><mo>,</mo><mi>G</mi><mo>)</mo>
+                    <mo>=</mo><mo>−</mo><mn>2</mn><mi>log</mi><mn>2</mn>
+                    <mo>+</mo><mn>2</mn><mi>JS</mi><mo>(</mo><msub><mi>P</mi><mtext>data</mtext></msub><mo>‖</mo><msub><mi>P</mi><mi>g</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(4.4)</span>
+            </div>
+        </div>
 
-因为 JS 散度 ≥ 0，最小值当且仅当 P_data = P_g 时取得
-此时 V = -2 log 2</code></pre>
+        <p>因为 JS 散度 <math class="math-inline" aria-label="JS 大于等于 0"><mi>JS</mi><mo>≥</mo><mn>0</mn></math>，最小值当且仅当 <math class="math-inline" aria-label="P_data 等于 P_g"><msub><mi>P</mi><mtext>data</mtext></msub><mo>=</mo><msub><mi>P</mi><mi>g</mi></msub></math> 时取得，此时 <math class="math-inline" aria-label="V 等于 负 2 log 2"><mi>V</mi><mo>=</mo><mo>−</mo><mn>2</mn><mi>log</mi><mn>2</mn></math>。</p>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>这个证明将 GAN 的对抗训练与第 2 章的概率理论完美连接——GAN 的 minimax 博弈最终等价于最小化 JS 散度。但 JS 散度在高维空间中有一个致命问题：当两个分布没有重叠时，JS 散度为常数 log 2，梯度为零——这就是 GAN 训练困难的理论根源。
