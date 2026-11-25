@@ -109,7 +109,8 @@ Conditional GAN:
 
         <p>WGAN 的解决思路是：用 <strong>Wasserstein 距离</strong>（Earth Mover's Distance, EMD）替代 JS 散度。Wasserstein 距离即使两个分布完全不重叠，也能提供有意义的梯度。</p>
 
-        <pre><code>Wasserstein 距离的直观定义：
+        <p>Wasserstein 距离的直观定义：</p>
+
         <div class="math-equation" role="group" aria-label="Wasserstein 距离定义">
             <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Wasserstein 距离公式，可横向滚动">
                 <math display="block" aria-label="W(P_data, P_g) 等于在联合分布 γ 属于 Π 下取 inf，对 (x,y) 服从 γ 的期望 二范数 x 减 y">
@@ -123,12 +124,14 @@ Conditional GAN:
             </div>
         </div>
 
-这可以理解为"把分布 P_data 的"土"搬到分布 P_g 的位置所需的最小运输成本"。
+        <p>这可以理解为"把分布 P_data 的"土"搬到分布 P_g 的位置所需的最小运输成本"。</p>
 
-关键性质：
-  - 即使分布不重叠，距离也有定义、有梯度
-  - 连续、可微、处处提供有意义的梯度信号
-  - 收敛性远优于 JS 散度</code></pre>
+        <p>关键性质：</p>
+        <ul>
+            <li>即使分布不重叠，距离也有定义、有梯度</li>
+            <li>连续、可微、处处提供有意义的梯度信号</li>
+            <li>收敛性远优于 JS 散度</li>
+        </ul>
 
         <p>WGAN 的实用改进包括：</p>
         <ul>
@@ -139,7 +142,8 @@ Conditional GAN:
 
         <p><strong>WGAN-GP</strong>（Gulrajani et al., 2017）进一步改进了 Lipschitz 约束的方式——用<strong>梯度惩罚（Gradient Penalty）</strong>替代粗暴的权重裁剪：</p>
 
-        <pre><code>WGAN-GP 的 Critic 损失：
+        <p>WGAN-GP 的 Critic 损失：</p>
+
         <div class="math-equation" role="group" aria-label="WGAN-GP 的损失函数">
             <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="WGAN-GP 损失，可横向滚动">
                 <math display="block" aria-label="L 等于 x 服从 P_g 下 D(x) 的期望 减 x 服从 P_data 下 D(x) 的期望，加 λ 乘梯度惩罚项">
@@ -157,7 +161,7 @@ Conditional GAN:
             </div>
         </div>
 
-梯度惩罚项确保 Critic 的梯度范数接近 1（即 1-Lipschitz）</code></pre>
+        <p>梯度惩罚项确保 Critic 的梯度范数接近 1（即 1-Lipschitz）。</p>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>WGAN 的数学贡献远超 GAN 领域——它告诉我们：损失函数的设计决定了优化问题的"地形"。JS 散度的地形是"高原+悬崖"（远离最优解时梯度消失），Wasserstein 距离的地形是"缓坡"（处处有梯度）。这个问题在扩散模型中也被以不同的方式处理了——但核心思想相通。
