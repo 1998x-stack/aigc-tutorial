@@ -151,24 +151,55 @@ GOOD: ε ~ N(0, I)              ← 从标准正态采样（随机性来自外�
 
         <p>VAE 的损失函数直接继承自第 2 章讲的 ELBO：</p>
 
-        <pre><code>L_VAE = -ELBO = -E_{z~Q}[log P(x|z)] + KL(Q(z|x) || P(z))
+        <div class="math-equation" role="group" aria-label="VAE 的负 ELBO 损失">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="VAE 损失公式，可横向滚动">
+                <math display="block" aria-label="L VAE 等于负 ELBO，等于负的对 log P(x|z) 在 z 服从 Q(z|x) 下的期望，加上 KL(Q(z|x) 平行 P(z))">
+                    <msub><mi>L</mi><mrow><mi>V</mi><mi>A</mi><mi>E</mi></mrow></msub>
+                    <mo>=</mo>
+                    <mo>−</mo><mtext>ELBO</mtext>
+                    <mo>=</mo>
+                    <mo>−</mo>
+                    <msub><mi>E</mi><mrow><mi>z</mi><mo>∼</mo><mi>Q</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo></mrow></msub>
+                    <mo>[</mo><mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>|</mo><mi>z</mi><mo>)</mo><mo>]</mo>
+                    <mo>+</mo>
+                    <mi>KL</mi><mo>(</mo><mi>Q</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>‖</mo><mi>P</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo>
+                </math>
+                <span class="eq-num">(3.1)</span>
+            </div>
+        </div>
 
-其中：
-  - E_{z~Q}[log P(x|z)] → 重建损失（Reconstruction Loss）
-    如果 x 是图像，通常用 BCE（二值交叉熵）或 MSE（均方误差）
-    这部分鼓励解码器精确重建输入
-
-  - KL(Q(z|x) || P(z)) → KL 正则项
-    Q(z|x) = N(μ, σ²)，P(z) = N(0, I)
-    这部分鼓励编码器输出的分布接近标准正态
-
-  - 两者之间的权衡系数 β（在 β-VAE 中可以调节）</code></pre>
+        <p>其中两项的物理含义：</p>
+        <ul>
+            <li><math class="math-inline" aria-label="重建项，z 服从 Q(z|x) 下对 log P(x|z) 的期望"><msub><mi>E</mi><mrow><mi>z</mi><mo>∼</mo><mi>Q</mi></mrow></msub><mo>[</mo><mi>log</mi><mi>P</mi><mo>(</mo><mi>x</mi><mo>|</mo><mi>z</mi><mo>)</mo><mo>]</mo></math> —— <strong>重建损失</strong>：若 x 是图像，通常用 BCE 或 MSE，鼓励解码器精确重建输入；</li>
+            <li><math class="math-inline" aria-label="KL 正则项，Q(z|x) 平行 P(z)"><mi>KL</mi><mo>(</mo><mi>Q</mi><mo>(</mo><mi>z</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>‖</mo><mi>P</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>)</mo></math> —— <strong>KL 正则项</strong>：把 Q(z|x)=N(μ,σ²) 拉向先验 P(z)=N(0,I)；</li>
+            <li>两者之间的权衡系数 <math class="math-inline" aria-label="贝塔"><mi>β</mi></math>（在 β-VAE 中可以调节）。</li>
+        </ul>
 
         <p>对于标准 VAE，KL 项有闭式解：</p>
 
-        <pre><code>KL(N(μ, σ²) || N(0, 1)) = ½ ∑ (μ² + σ² - log(σ²) - 1)</code></pre>
+        <div class="math-equation" role="group" aria-label="高斯分布对标准正态的 KL 散度闭式解">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="KL 闭式解公式，可横向滚动">
+                <math display="block" aria-label="KL(N(μ,σ²) 平行 N(0,1)) 等于二分之一乘以 j 从 1 到 d 求和：μ_j 平方 加 σ_j 平方 减 log σ_j 平方 减 1">
+                    <mi>KL</mi><mo>(</mo><mi>N</mi><mo>(</mo><mi>μ</mi><mo>,</mo><msup><mi>σ</mi><mn>2</mn></msup><mo>)</mo><mo>‖</mo><mi>N</mi><mo>(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>)</mo><mo>)</mo>
+                    <mo>=</mo>
+                    <mfrac><mn>1</mn><mn>2</mn></mfrac>
+                    <munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>d</mi></munderover>
+                    <mrow><mo>(</mo>
+                        <msubsup><mi>μ</mi><mi>j</mi><mn>2</mn></msubsup>
+                        <mo>+</mo>
+                        <msubsup><mi>σ</mi><mi>j</mi><mn>2</mn></msubsup>
+                        <mo>−</mo>
+                        <mi>log</mi><msubsup><mi>σ</mi><mi>j</mi><mn>2</mn></msubsup>
+                        <mo>−</mo><mn>1</mn>
+                    <mo>)</mo></mrow>
+                </math>
+                <span class="eq-num">(3.2)</span>
+            </div>
+        </div>
 
-        <p>这意味着你不需要近似计算 KL 散度——一行代码就能算出来。完整的 VAE loss 实现可以很简洁：</p>
+        <p>其中 <math class="math-inline" aria-label="d 是潜变量维度"><mi>d</mi></math> 是潜变量维度，<math class="math-inline" aria-label="j 索引"><mi>j</mi></math> 为逐维求和索引。这意味着你不需要近似计算 KL 散度——一行代码就能算出来。</p>
+
+        <p>完整的 VAE loss 实现可以很简洁：</p>
 
         <pre><code>def vae_loss(recon_x, x, mu, logvar):
     # 重建损失（二值交叉熵）

@@ -219,6 +219,47 @@ figcaption {
 .source-list { font-size: 0.9rem; line-height: 1.9; }
 .source-list a { color: #6d28d9; }
 
+/* === Math typesetting (native MathML Core, offline) === */
+.math-inline {
+    font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'Times New Roman', serif;
+    font-size: 1.04em;
+}
+
+.math-equation { margin: 16px 0; max-width: 100%; min-width: 0; }
+
+.math-scroll {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 2px;
+    background: #fbfaff;
+    border: 1px solid #ddd6fe;
+    border-radius: 12px;
+}
+
+.math-scroll:focus-visible { outline: 3px solid #147f80; outline-offset: 2px; }
+
+.math-scroll math[display="block"] {
+    width: max-content;
+    min-width: 100%;
+    font-size: 1.2rem;
+    padding: 8px 12px;
+}
+
+.eq-num {
+    display: inline-block;
+    margin-left: 18px;
+    color: #6d28d9;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+@media print {
+    .math-scroll { overflow: visible; }
+    .math-scroll math[display="block"] { font-size: 1rem; }
+}
+
 .skip-link {
     position: absolute;
     left: -999px;
