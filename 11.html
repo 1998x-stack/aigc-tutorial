@@ -76,7 +76,19 @@
 
         <p>具体来说，Classifier Guidance 修改噪声预测为：</p>
 
-        <pre><code>ε̂_θ(x_t, t, y) = ε_θ(x_t, t) - s · √(1 - ᾱ_t) · ∇_{x_t} log p_φ(y | x_t)</code></pre>
+        <div class="math-equation" role="group" aria-label="Classifier Guidance 的噪声预测">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Classifier Guidance 公式，可横向滚动">
+                <math display="block" aria-label="ε帽_θ(x_t,t,y) 等于 ε_θ(x_t,t) 减去 s 乘 根号(1-ᾱ_t) 乘 分类器 log p_φ(y|x_t) 对 x_t 的梯度">
+                    <msub><mover><mi>ε</mi><mo>^</mo></mover><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo>
+                    <mo>−</mo><mi>s</mi><mo>⋅</mo><msqrt><mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></mrow></msqrt>
+                    <mo>⋅</mo><msub><mo>∇</mo><msub><mi>x</mi><mi>t</mi></msub></msub>
+                    <mi>log</mi><msub><mi>p</mi><mi>φ</mi></msub><mo>(</mo><mi>y</mi><mo>|</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(11.1)</span>
+            </div>
+        </div>
 
         <p>其中 ∇_{x_t} log p_φ(y | x_t) 是分类器 p_φ 对 x_t 的梯度（指向目标类别 y 的方向），s 是 guidance scale（控制引导强度）。</p>
 
@@ -96,12 +108,27 @@
 
         <p>CFG 的噪声预测公式：</p>
 
-        <pre><code>ε̂_θ(x_t, t, y) = ε_θ(x_t, t, ∅) + w · ( ε_θ(x_t, t, y) - ε_θ(x_t, t, ∅) )
+        <div class="math-equation" role="group" aria-label="CFG 的噪声预测">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="CFG 公式，可横向滚动">
+                <math display="block" aria-label="ε帽_θ(x_t,t,y) 等于无条件预测 ε_θ(x_t,t,空) 加上 w 乘 (条件预测 减 无条件预测)">
+                    <msub><mover><mi>ε</mi><mo>^</mo></mover><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>∅</mi><mo>)</mo>
+                    <mo>+</mo><mi>w</mi><mo>⋅</mo><mo>(</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+                    <mo>−</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>∅</mi><mo>)</mo>
+                    <mo>)</mo>
+                </math>
+                <span class="eq-num">(11.2)</span>
+            </div>
+        </div>
 
-其中：
-  ε_θ(x_t, t, y)  = 条件预测（给定 prompt y）
-  ε_θ(x_t, t, ∅)  = 无条件预测（空 prompt）
-  w                = CFG 尺度</code></pre>
+        <ul>
+            <li><math class="math-inline" aria-label="ε_θ(x_t,t,y) 条件预测"><msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>y</mi><mo>)</mo></math> —— 条件预测（给定 prompt <math class="math-inline" aria-label="y"><mi>y</mi></math>）</li>
+            <li><math class="math-inline" aria-label="ε_θ(x_t,t,空) 无条件预测"><msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>∅</mi><mo>)</mo></math> —— 无条件预测（空 prompt）</li>
+            <li><math class="math-inline" aria-label="w CFG 尺度"><mi>w</mi></math> —— CFG 尺度</li>
+        </ul>
 
         <p>当 w = 1 时，ε̂ = 条件预测，即标准的条件生成。当 w > 1 时，模型在"条件预测-无条件预测"的方向上外推，相当于在无条件分布的基础上向条件方向"推了一把"，从而更严格地遵守 prompt。</p>
 
@@ -162,7 +189,21 @@ text_emb = text_encoder(tokens.input_ids)[0]  # → [1, 77, 768]
 
         <p>当你在 WebUI 或 ComfyUI 中输入 Negative Prompt 时，实际上替换了 CFG 公式中的"无条件预测"部分：</p>
 
-        <pre><code>ε̂_θ(x_t, t, y_pos, y_neg) = ε_θ(x_t, t, y_neg) + w · (ε_θ(x_t, t, y_pos) - ε_θ(x_t, t, y_neg))</code></pre>
+        <div class="math-equation" role="group" aria-label="Negative Prompt 修改后的 CFG 公式">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Negative Prompt 公式，可横向滚动">
+                <math display="block" aria-label="ε帽_θ(x_t,t,y_pos,y_neg) 等于以 y_neg 为基准，加上 w 乘 (y_pos 预测 减 y_neg 预测)">
+                    <msub><mover><mi>ε</mi><mo>^</mo></mover><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mi>y</mi><mtext>pos</mtext></msub><mo>,</mo><msub><mi>y</mi><mtext>neg</mtext></msub><mo>)</mo>
+                    <mo>=</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mi>y</mi><mtext>neg</mtext></msub><mo>)</mo>
+                    <mo>+</mo><mi>w</mi><mo>⋅</mo><mo>(</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mi>y</mi><mtext>pos</mtext></msub><mo>)</mo>
+                    <mo>−</mo>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mi>y</mi><mtext>neg</mtext></msub><mo>)</mo>
+                    <mo>)</mo>
+                </math>
+                <span class="eq-num">(11.3)</span>
+            </div>
+        </div>
 
         <p>也就是说，原来的"无条件预测" ε_θ(x_t, t, ∅) 被替换成了"负面条件预测" ε_θ(x_t, t, y_neg)。效果是：模型不仅朝向正向 prompt 引导，还同时<strong>远离</strong>负向 prompt 引导的区域。</p>
 
