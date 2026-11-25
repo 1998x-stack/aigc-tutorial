@@ -91,16 +91,23 @@
             <li><strong>好的生成模型应该覆盖所有类别</strong>：整体上的类别分布应该均匀（边际分布 P(y) 的熵大）</li>
         </ul>
 
-        <pre><code>IS = exp(E_x[KL(P(y|x) || P(y))])
+        <div class="math-equation" role="group" aria-label="Inception Score 定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Inception Score 公式，可横向滚动">
+                <math display="block" aria-label="IS 等于 exp 对 x 的期望 KL(P(y|x) 平行 P(y))">
+                    <mtext>IS</mtext><mo>=</mo><mi>exp</mi><mo>(</mo>
+                    <msub><mi>E</mi><mi>x</mi></msub><mo>[</mo>
+                    <mi>KL</mi><mo>(</mo><mi>P</mi><mo>(</mo><mi>y</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>‖</mo><mi>P</mi><mo>(</mo><mi>y</mi><mo>)</mo><mo>)</mo>
+                    <mo>]</mo><mo>)</mo>
+                </math>
+                <span class="eq-num">(7.1)</span>
+            </div>
+        </div>
 
-其中：
-  P(y|x) —— 给定图像 x 时 Inception 预测的类别概率分布
-  P(y)   —— 所有生成图像的平均类别分布
-
-直观理解：
-  - 每个样本都被 Inception 以高置信度分到某个类别（P(y|x) 很尖）
-  - 但所有样本平均来看分布在各类别中（P(y) 很均匀）
-  → IS 值越大越好</code></pre>
+        <ul>
+            <li><math class="math-inline" aria-label="P(y|x)"><mi>P</mi><mo>(</mo><mi>y</mi><mo>|</mo><mi>x</mi><mo>)</mo></math> —— 给定图像 x 时 Inception 预测的类别概率分布</li>
+            <li><math class="math-inline" aria-label="P(y)"><mi>P</mi><mo>(</mo><mi>y</mi><mo>)</mo></math> —— 所有生成图像的平均类别分布</li>
+            <li>直观理解：单个样本的 <math class="math-inline" aria-label="P(y|x)"><mi>P</mi><mo>(</mo><mi>y</mi><mo>|</mo><mi>x</mi><mo>)</mo></math> 很尖，而总体 <math class="math-inline" aria-label="P(y)"><mi>P</mi><mo>(</mo><mi>y</mi><mo>)</mo></math> 很均匀，两者 KL 越大越好。</li>
+        </ul>
 
         <p><strong>局限性</strong>（非常严重）：</p>
         <ul>
@@ -127,17 +134,25 @@
             <li>计算两个多维高斯分布之间的 Frechet 距离（也叫 Wasserstein-2 距离）</li>
         </ol>
 
-        <pre><code>FID = ||μ_r - μ_g||² + Tr(Σ_r + Σ_g - 2(Σ_r Σ_g)^{½})
+        <div class="math-equation" role="group" aria-label="FID 定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="FID 公式，可横向滚动">
+                <math display="block" aria-label="FID 等于 μ_r 减 μ_g 的二范数平方，加上 Tr(Σ_r 加 Σ_g 减 2(Σ_r Σ_g) 的 1/2 次方)">
+                    <mtext>FID</mtext><mo>=</mo>
+                    <msup><mrow><mo>‖</mo><msub><mi>μ</mi><mi>r</mi></msub><mo>−</mo><msub><mi>μ</mi><mi>g</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup>
+                    <mo>+</mo>
+                    <mi>Tr</mi><mo>(</mo><msub><mi>Σ</mi><mi>r</mi></msub><mo>+</mo><msub><mi>Σ</mi><mi>g</mi></msub><mo>−</mo><mn>2</mn>
+                    <msup><mrow><mo>(</mo><msub><mi>Σ</mi><mi>r</mi></msub><msub><mi>Σ</mi><mi>g</mi></msub><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup>
+                    <mo>)</mo>
+                </math>
+                <span class="eq-num">(7.2)</span>
+            </div>
+        </div>
 
-其中：
-  μ_r, Σ_r —— 真实图像特征的均值和协方差
-  μ_g, Σ_g —— 生成图像特征的均值和协方差
-  Tr —— 矩阵的迹（对角线元素和）
-
-FID 越小越好。经验阈值：
-  - FID &lt; 10：生成质量优秀
-  - FID 10-30：生成质量良好
-  - FID &gt; 50：生成质量较差</code></pre>
+        <ul>
+            <li><math class="math-inline" aria-label="μ_r, Σ_r"><msub><mi>μ</mi><mi>r</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>r</mi></msub></math> —— 真实图像特征的均值和协方差</li>
+            <li><math class="math-inline" aria-label="μ_g, Σ_g"><msub><mi>μ</mi><mi>g</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>g</mi></msub></math> —— 生成图像特征的均值和协方差；<math class="math-inline" aria-label="Tr"><mi>Tr</mi></math> 为矩阵的迹</li>
+            <li>FID 越小越好。常见经验阈值：FID &lt; 10 优秀、10–30 良好、&gt; 50 较差（阈值为经验参考，非论文硬性结论）。</li>
+        </ul>
 
         <p><strong>FID 的优缺点总结</strong>：</p>
         <div class="table-scroll"><table>
@@ -158,14 +173,24 @@ FID 越小越好。经验阈值：
 
         <p>CLIP Score 的计算非常简单：</p>
 
-        <pre><code>CLIP Score = E[cosine_similarity(CLIP_text(prompt), CLIP_image(image))]
+        <div class="math-equation" role="group" aria-label="CLIP Score 定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="CLIP Score 公式，可横向滚动">
+                <math display="block" aria-label="CLIP Score 等于 E(cosine_similarity(CLIP_text(prompt), CLIP_image(image)))">
+                    <mtext>CLIP Score</mtext><mo>=</mo>
+                    <mi>E</mi><mo>[</mo>
+                    <mi>cosine_similarity</mi><mo>(</mo>
+                    <mtext>CLIP_text</mtext><mo>(</mo><mtext>prompt</mtext><mo>)</mo><mo>,</mo>
+                    <mtext>CLIP_image</mtext><mo>(</mo><mtext>image</mtext><mo>)</mo><mo>)</mo>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(7.3)</span>
+            </div>
+        </div>
 
-其中：
-  - CLIP_text 将文本 prompt 映射到联合嵌入空间
-  - CLIP_image 将图像映射到同一联合嵌入空间
-  - cosine_similarity 度量两者的对齐程度
-
-分数范围通常在 0-1（或 0-100，取决于具体实现），越高越好。</code></pre>
+        <ul>
+            <li><code>CLIP_text</code> 将文本 prompt 映射到联合嵌入空间；<code>CLIP_image</code> 将图像映射到同一空间</li>
+            <li><code>cosine_similarity</code> 度量两者的对齐程度；分数越高越好</li>
+        </ul>
 
         <p><strong>CLIP Score 的优缺点</strong>：</p>
         <ul>

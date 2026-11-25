@@ -110,7 +110,18 @@ Conditional GAN:
         <p>WGAN 的解决思路是：用 <strong>Wasserstein 距离</strong>（Earth Mover's Distance, EMD）替代 JS 散度。Wasserstein 距离即使两个分布完全不重叠，也能提供有意义的梯度。</p>
 
         <pre><code>Wasserstein 距离的直观定义：
-  W(P_data, P_g) = inf_{γ∈Π} E_{(x,y)~γ}[||x - y||]
+        <div class="math-equation" role="group" aria-label="Wasserstein 距离定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Wasserstein 距离公式，可横向滚动">
+                <math display="block" aria-label="W(P_data, P_g) 等于在联合分布 γ 属于 Π 下取 inf，对 (x,y) 服从 γ 的期望 二范数 x 减 y">
+                    <mi>W</mi><mo>(</mo><msub><mi>P</mi><mtext>data</mtext></msub><mo>,</mo><msub><mi>P</mi><mi>g</mi></msub><mo>)</mo>
+                    <mo>=</mo>
+                    <munder><mi>inf</mi><mrow><mi>γ</mi><mo>∈</mo><mi>Π</mi></mrow></munder>
+                    <msub><mi>E</mi><mrow><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo><mo>∼</mo><mi>γ</mi></mrow></msub>
+                    <mo>[</mo><mo>‖</mo><mi>x</mi><mo>−</mo><mi>y</mi><mo>‖</mo><mo>]</mo>
+                </math>
+                <span class="eq-num">(5.1)</span>
+            </div>
+        </div>
 
 这可以理解为"把分布 P_data 的"土"搬到分布 P_g 的位置所需的最小运输成本"。
 
@@ -129,7 +140,22 @@ Conditional GAN:
         <p><strong>WGAN-GP</strong>（Gulrajani et al., 2017）进一步改进了 Lipschitz 约束的方式——用<strong>梯度惩罚（Gradient Penalty）</strong>替代粗暴的权重裁剪：</p>
 
         <pre><code>WGAN-GP 的 Critic 损失：
-  L = E_{x~P_g}[D(x)] - E_{x~P_data}[D(x)] + λ * E_{x̂~P_x̂}[(||∇_{x̂} D(x̂)||_2 - 1)²]
+        <div class="math-equation" role="group" aria-label="WGAN-GP 的损失函数">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="WGAN-GP 损失，可横向滚动">
+                <math display="block" aria-label="L 等于 x 服从 P_g 下 D(x) 的期望 减 x 服从 P_data 下 D(x) 的期望，加 λ 乘梯度惩罚项">
+                    <mi>L</mi><mo>=</mo>
+                    <msub><mi>E</mi><mrow><mi>x</mi><mo>∼</mo><msub><mi>P</mi><mi>g</mi></msub></mrow></msub><mo>[</mo><mi>D</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>]</mo>
+                    <mo>−</mo>
+                    <msub><mi>E</mi><mrow><mi>x</mi><mo>∼</mo><msub><mi>P</mi><mtext>data</mtext></msub></mrow></msub><mo>[</mo><mi>D</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>]</mo>
+                    <mo>+</mo><mi>λ</mi>
+                    <msub><mi>E</mi><mrow><mover><mi>x</mi><mo>^</mo></mover><mo>∼</mo><msub><mi>P</mi><mover><mi>x</mi><mo>^</mo></mover></msub></mrow></msub>
+                    <mo>[</mo>
+                    <msup><mrow><mo>(</mo><msub><mrow><mo>‖</mo><msub><mo>∇</mo><mover><mi>x</mi><mo>^</mo></mover></msub><mi>D</mi><mo>(</mo><mover><mi>x</mi><mo>^</mo></mover><mo>)</mo><mo>‖</mo></mrow><mn>2</mn></msub><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></msup>
+                    <mo>]</mo>
+                </math>
+                <span class="eq-num">(5.2)</span>
+            </div>
+        </div>
 
 梯度惩罚项确保 Critic 的梯度范数接近 1（即 1-Lipschitz）</code></pre>
 
