@@ -125,18 +125,32 @@ x = x + pos_embedding[:, :N, :]        # 加位置编码</code></pre>
 
         <p><strong>AdaLN（Adaptive Layer Normalization）</strong>是 DiT 的默认选择。其核心思想是：不用将条件信息"注入"到序列中，而是用条件信息来<strong>调整归一化层的参数</strong>：</p>
 
-        <pre><code># AdaLN 的计算流程
-# 1. 将时间步 t 编码并经过 MLP 得到缩放和偏移参数
-t_emb = MLP(SiLU(Linear(TimeEmbed(t))))  # → scale, shift
-γ, β = chunk(t_emb, 2, dim=-1)
+        <p>把时间步编码经 MLP 得到一组缩放/偏移参数：</p>
 
-# 2. 在 LayerNorm 后应用自适应缩放和偏移
-x_norm = LayerNorm(x)
-x_adapted = (1 + γ) · x_norm + β
+        <div class="math-equation" role="group" aria-label="AdaLN 的参数预测">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="AdaLN 参数预测公式，可横向滚动">
+                <math display="block" aria-label="(γ, β) 等于 MLP( t_emb )">
+                    <mo>(</mo><mi>γ</mi><mo>,</mo><mi>β</mi><mo>)</mo><mo>=</mo>
+                    <mi>MLP</mi><mo>(</mo><msub><mi>t</mi><mi>emb</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(13.1)</span>
+            </div>
+        </div>
 
-# 3. 送入 Transformer 的子层
-x = x + Attention(x_adapted)
-x = x + MLN(LayerNorm(x))  # 使用另一组 γ, β</code></pre>
+        <p>再在 LayerNorm 后应用自适应缩放与偏移，得到调制后的特征：</p>
+
+        <div class="math-equation" role="group" aria-label="AdaLN 的调制">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="AdaLN 调制公式，可横向滚动">
+                <math display="block" aria-label="x_adapted 等于 (1 加 γ) 逐元素乘 LayerNorm(x) 加 β">
+                    <msub><mi>x</mi><mi>adapted</mi></msub><mo>=</mo>
+                    <mo>(</mo><mn>1</mn><mo>+</mo><mi>γ</mi><mo>)</mo><mo>⊙</mo>
+                    <mi>LayerNorm</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><mi>β</mi>
+                </math>
+                <span class="eq-num">(13.2)</span>
+            </div>
+        </div>
+
+        <p>其中 <math class="math-inline" aria-label="⊙ 表示逐元素相乘"><mo>⊙</mo></math> 表示逐元素相乘。调制后的 <math class="math-inline" aria-label="x_adapted"><msub><mi>x</mi><mi>adapted</mi></msub></math> 送入自注意力子层，第二个子层（MLP）则使用另一组独立的 <math class="math-inline" aria-label="γ 与 β"><mi>γ</mi><mo>,</mo><mi>β</mi></math>，两者都参与残差相加。</p>
 
         <p><strong>AdaLN-Zero</strong> 在此基础上增加了一个可学习的零初始化门控参数 α，在训练开始时让 DiT Block 退化为恒等映射（Identity Mapping），从而避免了训练初期的不稳定性。这个技巧借鉴了 ResNet 的"零初始化残差"思想，被证明对稳定深层次 DiT 的训练至关重要。</p>
 
@@ -156,6 +170,8 @@ x = x + MLN(LayerNorm(x))  # 使用另一组 γ, β</code></pre>
             <tr><td>DiT-XL</td><td>675M</td><td>8.6</td><td>2.27</td></tr>
             <tr><td>DiT-XL（CFG=1.5）</td><td>675M</td><td>17.2（两次前向）</td><td><strong>2.27</strong></td></tr>
         </table></div>
+
+        <p class="section-dek">表中参数量、GFLOPs 与 FID 为 DiT 论文（Peebles &amp; Xie, 2023）在 ImageNet 256×256 上报告的值；开启 CFG 时每步需两次前向传播，因此 GFLOPs 翻倍而 FID 不变。</p>
 
         <p>实验结果显示，DiT 的计算量（GFLOPs）与生成质量（FID）呈近似对数线性关系——投入越多的计算，质量稳定提升，没有出现明显的"收益递减"。这种优秀的 Scaling Law 是 U-Net 无法达到的——U-Net 增大到一定程度后继续增加参数收益甚微。</p>
 
