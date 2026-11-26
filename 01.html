@@ -132,12 +132,16 @@
         <p>截至 2026 年上半年，生成模型已经渗透到几乎每一个内容创作领域：</p>
 
         <ul>
-            <li><strong>图像生成：</strong>文生图是最成熟的赛道。Stable Diffusion 3、FLUX.1、DALL·E 3 可以生成照片级图像，HiDream-O1-Image-1.5 在 Artificial Analysis 评测中达到 1265 ELO 评分。</li>
-            <li><strong>视频生成：</strong>OpenAI Sora 2（基于 sCM 架构）已实现实时生成；字节 Seedance 2.5 支持 30 秒原生 4K 视频；国产可灵 3.0、混元视频等覆盖全链路编辑。</li>
-            <li><strong>3D 内容：</strong>腾讯混元已实现文生 3D 在 30 秒内完成，并在 700+ 业务场景落地。</li>
+            <li><strong>图像生成：</strong>文生图是最成熟的赛道。Stable Diffusion 3、FLUX.1、DALL·E 3 可以生成照片级图像；HiDream-O1 等较新模型在 Artificial Analysis 等公开榜单上位居前列。</li>
+            <li><strong>视频生成：</strong>OpenAI Sora 2 已实现较快的生成速度；字节 Seedance 2.5 支持原生 4K、数十秒级视频；国产可灵 3.0、混元视频等覆盖全链路编辑。</li>
+            <li><strong>3D 内容：</strong>腾讯混元已实现文生 3D 在较短时间内完成，并落地于多个业务场景。</li>
             <li><strong>音频/语音：</strong>AI 配音、TTS、音乐生成已进入工业化应用。</li>
-            <li><strong>多模态理解+生成：</strong>Emu3 统一了"理解"和"生成"——同一个模型既能识别图像中的物体，也能生成新的图像。</li>
+            <li><strong>多模态理解+生成：</strong>Emu3 统一了“理解”和“生成”——同一个模型既能识别图像中的物体，也能生成新的图像。</li>
         </ul>
+
+        <div class="tip">
+            <strong>💡 来源与时效说明：</strong>本节列举的是 2025–2026 年的公开产品与榜单信息（厂商公告与 Artificial Analysis 等评测平台）。这类信息更新极快，本教程未逐条核对榜单快照，因此具体数值（ELO 分数、业务落地数量、时长与分辨率）均以官方最新公布为准，不应作为评测结论直接引用。
+        </div>
 
         <div class="warning">
             <strong>⚠️ 一个真实的踩坑故事：</strong>2023 年我刚接触 Stable Diffusion 时，以为"只要会写 prompt 就能生成好图"。结果花了一周时间调 prompt，生成的结果总是肢体扭曲、手指畸形。后来才发现问题不在 prompt——我用的模型是 SD 1.5，它对人体结构的理解本就有缺陷，换用 SDXL + 人体姿态 ControlNet 后，第一次运行就生成了完美的人体。这个教训是：<strong>理解模型的底层能力边界，比调 prompt 重要一百倍。</strong>
