@@ -77,10 +77,35 @@
 
         <p>这个概率流 ODE 的形式如下：</p>
 
-        <pre><code>dx / dt = f(t) · x - (1/2) · g(t)² · ∇_x log p_t(x)
+        <div class="math-equation" role="group" aria-label="概率流 ODE">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="概率流 ODE 公式，可横向滚动">
+                <math display="block" aria-label="dx 除以 dt 等于 f(t) x 减去 二分之一 g(t) 平方 乘 梯度 log p_t(x)">
+                    <mfrac><mrow><mi>d</mi><mi>x</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac>
+                    <mo>=</mo><mi>f</mi><mo>(</mo><mi>t</mi><mo>)</mo><mi>x</mi><mo>−</mo>
+                    <mfrac><mn>1</mn><mn>2</mn></mfrac>
+                    <msup><mrow><mi>g</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow><mn>2</mn></msup>
+                    <msub><mo>∇</mo><mi>x</mi></msub>
+                    <mi>log</mi><msub><mi>p</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                </math>
+                <span class="eq-num">(12.1)</span>
+            </div>
+        </div>
 
-其中 f(t) 和 g(t) 由噪声调度 β_t 决定
-∇_x log p_t(x) 是"得分函数"（score function），由 ε_θ 近似: ∇_x log p_t(x) ≈ - ε_θ(x_t, t) / √(1 - ᾱ_t)</code></pre>
+        <p>其中 <math class="math-inline" aria-label="f(t) 与 g(t) 由噪声调度决定"><mi>f</mi><mo>(</mo><mi>t</mi><mo>)</mo></math> 与 <math class="math-inline" aria-label="g(t) 由噪声调度决定"><mi>g</mi><mo>(</mo><mi>t</mi><mo>)</mo></math> 由噪声调度 <math class="math-inline" aria-label="β_t"><msub><mi>β</mi><mi>t</mi></msub></math> 决定。</p>
+
+        <p>其中的"得分函数"（score function）<math class="math-inline" aria-label="梯度 log p_t(x)"><msub><mo>∇</mo><mi>x</mi></msub><mi>log</mi><msub><mi>p</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></math> 无需单独训练，可由噪声预测网络 <math class="math-inline" aria-label="ε_θ"><msub><mi>ε</mi><mi>θ</mi></msub></math> 近似：</p>
+
+        <div class="math-equation" role="group" aria-label="得分函数的噪声近似">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="得分函数近似公式，可横向滚动">
+                <math display="block" aria-label="梯度 log p_t(x) 约等于 负 ε_θ(x_t,t) 除以 根号(1 减 ᾱ_t)">
+                    <msub><mo>∇</mo><mi>x</mi></msub>
+                    <mi>log</mi><msub><mi>p</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>≈</mo><mo>−</mo>
+                    <mfrac><mrow><msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo></mrow><msqrt><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></msqrt></mfrac>
+                </math>
+                <span class="eq-num">(12.2)</span>
+            </div>
+        </div>
 
         <p>这个视角的革命性在于：它将"随机去噪"转化为了"确定性 ODE 求解"问题。一旦是 ODE，我们就可以使用各种高效的数值求解器——Euler 法、Runge-Kutta 法、多步法等等。</p>
 
@@ -121,7 +146,21 @@ for t in reversed(range(steps)):
     # 3. 加入随机噪声（祖先采样）
     x_{t-1} = x_mean + σ_t · ε,  ε ∼ N(0, I)</code></pre>
 
-        <p>加入随机噪声的效果是：</p>
+        <div class="math-equation" role="group" aria-label="祖先采样的一步更新">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="祖先采样更新公式，可横向滚动">
+                <math display="block" aria-label="x 下标 t 减 1 等于均值 μ_t(x_t) 加 σ_t 乘 ε，ε 服从标准正态分布">
+                    <msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub>
+                    <mo>=</mo>
+                    <msub><mi>μ</mi><mi>t</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo>
+                    <mo>+</mo><msub><mi>σ</mi><mi>t</mi></msub><mi>ε</mi>
+                    <mo>,</mo><mspace width="0.5em"/>
+                    <mi>ε</mi><mo>∼</mo><mi>𝒩</mi><mo>(</mo><mn>0</mn><mo>,</mo><mi>I</mi><mo>)</mo>
+                </math>
+                <span class="eq-num">(12.3)</span>
+            </div>
+        </div>
+
+        <p>其中 <math class="math-inline" aria-label="μ_t(x_t) 是确定性均值"><msub><mi>μ</mi><mi>t</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo></math> 是确定性更新的均值，<math class="math-inline" aria-label="σ_t 控制注入噪声强度"><msub><mi>σ</mi><mi>t</mi></msub></math> 控制注入噪声的强度。加入随机噪声的效果是：</p>
         <ul>
             <li><strong>更高的多样性</strong>：同一 prompt 和 seed 也可能产生不同的结果</li>
             <li><strong>更好的细节</strong>：随机性有助于模型跳出"局部最优"，产生更丰富的纹理</li>
@@ -160,12 +199,25 @@ for t in reversed(range(steps)):
         <p>LCM 的核心思想是：<strong>训练一个网络 f_θ(x_t, t) 直接输出 x₀ 的估计（或者跳过所有中间步骤），使得从任意时间步 t 出发，一步就能跳回到 x₀。</strong></p>
 
         <p>训练 LCM 的损失函数：</p>
-        <pre><code>L_CM = E[ λ(t) · d( f_θ(x_{t_{n+1}}, t_{n+1}), f_θ⁻(x̂_t^{φ}, t_n) ) ]
+        <div class="math-equation" role="group" aria-label="LCM 一致性蒸馏损失">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="LCM 损失函数，可横向滚动">
+                <math display="block" aria-label="L_CM 等于对 λ(t) 乘 d( f_θ(x_{t_{n+1}}, t_{n+1}), f_θ 负(x 帽_{t_n}, t_n) ) 取期望">
+                    <msub><mi>L</mi><mi>CM</mi></msub><mo>=</mo><mi>𝔼</mi><mo>[</mo>
+                    <mi>λ</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>⋅</mo><mi>d</mi><mo>(</mo>
+                    <msub><mi>f</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></msub><mo>,</mo><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>)</mo>
+                    <mo>,</mo>
+                    <msubsup><mi>f</mi><mi>θ</mi><mo>−</mo></msubsup><mo>(</mo><msub><mover><mi>x</mi><mo>^</mo></mover><msub><mi>t</mi><mi>n</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>n</mi></msub><mo>)</mo>
+                    <mo>)</mo><mo>]</mo>
+                </math>
+                <span class="eq-num">(12.4)</span>
+            </div>
+        </div>
 
-其中：
-  - f_θ⁻ 是目标网络（EMA 更新）
-  - x̂_t^{φ} 是使用数值求解器从 t_{n+1} 到 t_n 的一步估计
-  - d(·) 是距离函数（通常使用 MSE 或 LPIPS）</code></pre>
+        <ul>
+            <li><math class="math-inline" aria-label="f_θ 负是目标网络"><msubsup><mi>f</mi><mi>θ</mi><mo>−</mo></msubsup></math> 是目标网络（EMA 更新，不参与梯度回传）</li>
+            <li><math class="math-inline" aria-label="x 帽_{t_n} 是一步估计"><msub><mover><mi>x</mi><mo>^</mo></mover><msub><mi>t</mi><mi>n</mi></msub></msub></math> 是使用数值求解器从 <math class="math-inline" aria-label="t_{n+1}"><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></math> 到 <math class="math-inline" aria-label="t_n"><msub><mi>t</mi><mi>n</mi></msub></math> 的一步估计</li>
+            <li><math class="math-inline" aria-label="d 是距离函数"><mi>d</mi><mo>(</mo><mo>⋅</mo><mo>)</mo></math> 是距离函数（通常使用 MSE 或 LPIPS）</li>
+        </ul>
 
         <p>LCM 的惊艳之处在于：</p>
         <ul>
