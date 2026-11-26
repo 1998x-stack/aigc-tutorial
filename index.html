@@ -256,6 +256,26 @@
         .card:nth-child(6n+5) .chapter-num { background: #f7c6c6; color: #5a2e2e; }
         .card:nth-child(6n) .chapter-num { background: #c4b3e0; color: #2f2a4a; }
 
+        .index-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            justify-content: center;
+            margin: 0 0 1.2rem;
+        }
+        .index-nav a {
+            color: #1f452b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: #f2fcee;
+            border: 1px solid #c6dfbe;
+            padding: 0.25rem 1rem;
+            border-radius: 30px;
+        }
+        .index-nav a:hover { background: #f7d44a; border-color: #dbb42c; }
+        .index-nav a:focus-visible { outline: 3px solid #147f80; outline-offset: 2px; }
+
         .fallback-list {
             list-style: none;
             display: grid;
@@ -288,6 +308,11 @@
 <body>
 <a class="skip-link" href="#catalog">跳转至课程目录</a>
 <div class="container">
+    <nav class="index-nav" aria-label="页面导航">
+        <a href="#catalog">课程目录</a>
+        <a href="#howto">如何使用</a>
+        <a href="#sources">参考来源</a>
+    </nav>
     <header class="header">
         <h1><span class="emoji"></span><span class="title-text"></span></h1>
         <div class="sub"></div>
@@ -350,11 +375,21 @@
         <noscript><p class="section-dek">本页课程卡片默认由 JavaScript 渲染；请启用 JavaScript，或从根目录的 <a href="01.html">第 1 章</a> 开始阅读，并使用章节页中的导航继续浏览。</p></noscript>
     </div>
 
-    <h2>如何使用本教程</h2>
+    <h2 id="howto">如何使用本教程</h2>
     <p>建议按章节顺序阅读，并在每章后打开对应的开源实现（如 Hugging Face Diffusers、ComfyUI）把架构对应到真实节点与参数上。第 2 章会系统回顾概率论基础；若你已经熟悉 KL 散度与极大似然，可直接从第 8 章的扩散模型数学开始。</p>
     <div class="tip">
         <strong>💡 阅读方式：</strong>每章先读“直觉与问题”，再看图示与公式，最后看工程实现。遇到标有“已作简化”或“教学示意”的数值，那是为便于理解而做的示意取值，并非论文实测结果；文中引用的实测指标均标注了来源论文。
     </div>
+
+    <h2 id="sources">参考来源</h2>
+    <p>本教程各章涉及的核心方法与指标均来自下列原始论文及各自章节列出的参考文献；页面中引用的实测数值以论文报告为准。</p>
+    <ul class="source-list">
+        <li>Kingma &amp; Welling, <em>Auto-Encoding Variational Bayes</em>, 2013（VAE）. <a href="https://arxiv.org/abs/1312.6114">arXiv:1312.6114</a></li>
+        <li>Goodfellow et al., <em>Generative Adversarial Networks</em>, NeurIPS 2014. <a href="https://arxiv.org/abs/1406.2661">arXiv:1406.2661</a></li>
+        <li>Ho et al., <em>Denoising Diffusion Probabilistic Models</em>, NeurIPS 2020（DDPM）. <a href="https://arxiv.org/abs/2006.11239">arXiv:2006.11239</a></li>
+        <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022（LDM）. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+        <li>Peebles &amp; Xie, <em>Scalable Diffusion Models with Transformers</em>, ICCV 2023（DiT）. <a href="https://arxiv.org/abs/2212.09748">arXiv:2212.09748</a></li>
+    </ul>
 
     <div style="text-align:center;">
         <div class="footer"></div>
