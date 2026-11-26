@@ -128,7 +128,7 @@ torch.onnx.export(
             <tr><td>连续批处理（vLLM）</td><td>吞吐量 3-10x</td><td>高（需框架支持）</td><td>LLM + 扩散混合场景</td></tr>
         </table></div>
 
-        <p>其中 <strong>Torch Compile</strong> 是 2024 年 PyTorch 2.x 引入的重磅特性。它在第一次推理时编译计算图，后续调用跳过 Python 解释器直接执行编译后的内核。在 SDXL 的 U-Net 上，实测可以节省 20-30% 的推理时间——零侵入，一行代码：</p>
+        <p>其中 <strong>Torch Compile</strong> 是 2024 年 PyTorch 2.x 引入的重磅特性。它在第一次推理时编译计算图，后续调用跳过 Python 解释器直接执行编译后的内核。在 SDXL 的 U-Net 上，它通常能带来可观的推理时间下降（官方基准中常见两成以上），且几乎零侵入，一行代码：</p>
 
         <pre><code>import torch
 from diffusers import StableDiffusionXLPipeline
@@ -265,7 +265,7 @@ async def process_queue(q: asyncio.Queue):
 
         <h2>25.5 推理性能对比</h2>
 
-        <p>为了帮你选型，下表列出了 2025-2026 主流 GPU 在扩散模型推理中的实测性能数据（基于 SDXL 1.0，20 步 DPM++，1024×1024，batch=1 FP16）：</p>
+        <p>为了帮你理解硬件量级差异，下表给出扩散模型推理的<strong>教学估算</strong>（基于 SDXL 1.0，约 20 步 DPM++，1024×1024，batch=1 FP16 的典型量级）：</p>
 
         <div class="table-scroll"><table>
             <tr><th>GPU 型号</th><th>显存</th><th>单图延迟</th><th>吞吐量（batch=4）</th><th>INT8 加速比</th><th>典型场景</th></tr>
@@ -275,6 +275,8 @@ async def process_queue(q: asyncio.Queue):
             <tr><td>RTX 5090</td><td>32 GB</td><td>~1.2 s</td><td>~18 img/s</td><td>3.2x</td><td>高性价比生产卡（2025+）</td></tr>
             <tr><td>RTX 4080</td><td>16 GB</td><td>~3.0 s</td><td>~5 img/s</td><td>2.2x</td><td>个人开发、实验</td></tr>
         </table></div>
+
+        <p class="section-dek">表中数值为便于对比而给出的<strong>教学估算量级</strong>，并非在统一环境下的受控实测：实际延迟与吞吐受模型版本、精度、编译选项、驱动与调度器影响，可能明显偏差。选型时请以自己在目标硬件上的标定为准。</p>
 
         <div class="tip">
             <strong>💡 选型建议：</strong>不要只看单图延迟——对于线上服务，<strong>吞吐量（img/s）</strong>比延迟更重要。RTX 5090 的单图延迟虽然比 A100 还低 33%，但在高并发场景下 A100 的 80 GB 显存允许更大的 batch size，总吞吐量可能反超。如果你需要服务 100+ QPS 的规模，A100/L40 集群仍是唯一选择；如果你的负载在 10-50 QPS 以内，RTX 5090 的性价比极高。
