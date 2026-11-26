@@ -139,14 +139,30 @@
 
         <p>Cross-Attention 是 SD 实现"文生图"的核心机制。它将 CLIP 编码的文本特征注入到 U-Net 的中间层：</p>
 
-        <pre><code># Cross-Attention 的计算公式
-Q = W_Q · φ(x_t)     # 来自 U-Net 中间层的特征图
-K = W_K · τ( prompt )  # 来自 CLIP 的文本嵌入
-V = W_V · τ( prompt )  # 来自 CLIP 的文本嵌入
+        <div class="math-equation" role="group" aria-label="Cross-Attention 的 Q/K/V 定义">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Q/K/V 定义，可横向滚动">
+                <math display="block" aria-label="Q 等于 W_Q 乘 φ(x_t)，K 等于 W_K 乘 τ(y)，V 等于 W_V 乘 τ(y)">
+                    <mi>Q</mi><mo>=</mo><msub><mi>W</mi><mi>Q</mi></msub><mi>φ</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo><mo>,</mo>
+                    <mspace width="1em"/><mi>K</mi><mo>=</mo><msub><mi>W</mi><mi>K</mi></msub><mi>τ</mi><mo>(</mo><mi>y</mi><mo>)</mo><mo>,</mo>
+                    <mspace width="1em"/><mi>V</mi><mo>=</mo><msub><mi>W</mi><mi>V</mi></msub><mi>τ</mi><mo>(</mo><mi>y</mi><mo>)</mo>
+                </math>
+                <span class="eq-num">(10.1)</span>
+            </div>
+        </div>
 
-Attention(Q, K, V) = softmax(Q · K^T / √d) · V</code></pre>
+        <div class="math-equation" role="group" aria-label="Cross-Attention 的输出">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Cross-Attention 公式，可横向滚动">
+                <math display="block" aria-label="Attention(Q,K,V) 等于 softmax( Q 乘 K 转置 除以 根号 d ) 乘 V">
+                    <mi>Attention</mi><mo>(</mo><mi>Q</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>V</mi><mo>)</mo><mo>=</mo>
+                    <mi>softmax</mi><mo>(</mo>
+                    <mfrac><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow><msqrt><mi>d</mi></msqrt></mfrac>
+                    <mo>)</mo><mi>V</mi>
+                </math>
+                <span class="eq-num">(10.2)</span>
+            </div>
+        </div>
 
-        <p>这里的 φ(x_t) 是 U-Net 的中间特征，τ(prompt) 是 CLIP Text Encoder 输出的 77×768 文本嵌入。Q（Query）来自图像侧，K（Key）和 V（Value）来自文本侧——这就是"Cross-Attention"名称的由来：注意力不再发生在图像特征内部（Self-Attention），而是跨越了图像和文本两个模态。</p>
+        <p>这里的 <math class="math-inline" aria-label="φ(x_t) 是 U-Net 中间特征"><mi>φ</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo></math> 是 U-Net 的中间特征，<math class="math-inline" aria-label="τ(y) 是文本嵌入，y 即 prompt"><mi>τ</mi><mo>(</mo><mi>y</mi><mo>)</mo></math>（<math class="math-inline" aria-label="y 为 prompt"><mi>y</mi></math> 即 prompt）是 CLIP Text Encoder 输出的 77×768 文本嵌入。Q（Query）来自图像侧，K（Key）和 V（Value）来自文本侧——这就是"Cross-Attention"名称的由来：注意力不再发生在图像特征内部（Self-Attention），而是跨越了图像和文本两个模态。</p>
 
         <p>每个注意力头的输出会经过一个线性投影后与输入相加（残差连接），使得模型可以选择性地"关注"文本中对应位置的语义信息。例如，生成 "a red apple on a blue table" 时，不同区域的像素会通过 Cross-Attention 找到对应的语义 token。</p>
 
