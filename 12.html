@@ -192,6 +192,30 @@ for t in reversed(range(steps)):
             <li><strong>艺术探索</strong>：Euler a 或 DPM++ SDE, 20-30 步（利用随机性产生多样性）</li>
         </ul>
 
+        <section class="widget" aria-labelledby="steps-widget-title">
+            <h3 id="steps-widget-title">交互：步数选择对 DPM++ 2M 的典型影响</h3>
+            <p>选择一个推理步数，观察确定性高阶求解器 DPM++ 2M 的典型表现。以下为教学定性说明，非实拍对比。</p>
+            <div class="widget-controls" role="group" aria-label="选择推理步数">
+                <button type="button" class="cfg-btn" data-steps="4">4 步</button>
+                <button type="button" class="cfg-btn" data-steps="10">10 步</button>
+                <button type="button" class="cfg-btn" data-steps="20">20 步</button>
+                <button type="button" class="cfg-btn" data-steps="50">50 步</button>
+            </div>
+            <div class="cfg-panel" data-steps="4">
+                <p><strong>4 步：</strong>整体结构勉强可辨，但纹理与边缘明显模糊，细节缺失严重。即使对高阶求解器，4 步仍偏少。</p>
+            </div>
+            <div class="cfg-panel" data-steps="10">
+                <p><strong>10 步：</strong>可接受质量，Happy-path 快速预览的常用下限；适合迭代构图，不适合终稿。</p>
+            </div>
+            <div class="cfg-panel" data-steps="20">
+                <p><strong>20 步：</strong>高质量，速度与质量平衡的最佳区间，是 SDXL 日常出图的推荐步数。</p>
+            </div>
+            <div class="cfg-panel" data-steps="50">
+                <p><strong>50 步：</strong>质量接近该求解器上限，但相比 20–30 步的增益已很小，边际收益递减。</p>
+            </div>
+            <noscript><p>未启用 JavaScript 时，上述四种步数的说明会同时显示，控制按钮不起作用。</p></noscript>
+        </section>
+
         <h2>12.5 LCM：蒸馏扩散模型为几步生成</h2>
 
         <p>LCM（Latent Consistency Model）是 2023 年提出的一种"扩散模型蒸馏"方法，目标是将预训练的扩散模型蒸馏为只需要 1-4 步就能生成的"一致性模型"。</p>
@@ -264,6 +288,24 @@ for t in reversed(range(steps)):
         </div>
     </main>
 </div>
-</div>
+<script>
+(function () {
+    var buttons = document.querySelectorAll('.cfg-btn[data-steps]');
+    var panels = document.querySelectorAll('.cfg-panel[data-steps]');
+    if (!buttons.length || !panels.length) { return; }
+    function select(steps) {
+        buttons.forEach(function (b) {
+            b.setAttribute('aria-pressed', String(b.getAttribute('data-steps') === steps));
+        });
+        panels.forEach(function (p) {
+            p.hidden = p.getAttribute('data-steps') !== steps;
+        });
+    }
+    buttons.forEach(function (b) {
+        b.addEventListener('click', function () { select(b.getAttribute('data-steps')); });
+    });
+    select('20');
+})();
+</script>
 </body>
 </html>
