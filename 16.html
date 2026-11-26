@@ -94,6 +94,30 @@ def cross_attention(x, text_emb):
 
     return out @ W_o</code></pre>
 
+        <p>写成公式即：</p>
+
+        <div class="math-equation" role="group" aria-label="Cross-Attention 的 Q/K/V">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Cross-Attention 的 Q/K/V 定义，可横向滚动">
+                <math display="block" aria-label="Q 等于 x 乘 W_q，K 等于 c 乘 W_k，V 等于 c 乘 W_v，其中 x 是图像特征，c 是文本条件">
+                    <mi>Q</mi><mo>=</mo><mi>x</mi><msub><mi>W</mi><mi>q</mi></msub><mo>,</mo><mspace width="1em"/>
+                    <mi>K</mi><mo>=</mo><mi>c</mi><msub><mi>W</mi><mi>k</mi></msub><mo>,</mo><mspace width="1em"/>
+                    <mi>V</mi><mo>=</mo><mi>c</mi><msub><mi>W</mi><mi>v</mi></msub>
+                </math>
+                <span class="eq-num">(16.1)</span>
+            </div>
+        </div>
+
+        <div class="math-equation" role="group" aria-label="Cross-Attention 的输出">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Cross-Attention 输出公式，可横向滚动">
+                <math display="block" aria-label="输出等于 softmax( Q 乘 K 转置 除以 根号 d_k ) 乘 V 再乘 W_o">
+                    <mi>out</mi><mo>=</mo>
+                    <mi>softmax</mi><mo>(</mo><mfrac><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mfrac><mo>)</mo>
+                    <mi>V</mi><msub><mi>W</mi><mi>o</mi></msub>
+                </math>
+                <span class="eq-num">(16.2)</span>
+            </div>
+        </div>
+
         <p>你可能会问：为什么用文本特征做 K/V，而不是 Q？直觉上，Q 是"当前去噪位置想知道什么信息"，K/V 是"文本能提供什么信息"。如果我们反过来，让文本做 Q、图像做 K/V，注意力就变成了"文本在关注图像的哪个区域"——这更适合图文检索，而不是条件生成。</p>
 
         <div class="tip">
@@ -126,6 +150,20 @@ def adaLn_zero_block(x, c):
     x = x + gate * x_out
 
     return x</code></pre>
+
+        <p>写成公式即：</p>
+
+        <div class="math-equation" role="group" aria-label="AdaLN-Zero 的调制与门控">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="AdaLN-Zero 公式，可横向滚动">
+                <math display="block" aria-label="x_norm 等于 (1 加 scale) 逐元素乘 LayerNorm(x) 加 shift；x 更新为 x 加 gate 逐元素乘 Attention(x_norm)">
+                    <msub><mi>x</mi><mi>norm</mi></msub><mo>=</mo>
+                    <mo>(</mo><mn>1</mn><mo>+</mo><mi>scale</mi><mo>)</mo><mo>⊙</mo><mi>LayerNorm</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><mi>shift</mi>
+                    <mo>,</mo><mspace width="1em"/>
+                    <msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mi>x</mi><mo>+</mo><mi>gate</mi><mo>⊙</mo><mi>Attention</mi><mo>(</mo><msub><mi>x</mi><mi>norm</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(16.3)</span>
+            </div>
+        </div>
 
         <p>关键在 <strong>gate 初始化为 0</strong> 这个设计。当训练开始时，gate=0 意味着残差分支的输出被完全阻塞，整个模型退化为一个恒等映射加上 MLP——这保证了训练的稳定起步。随着训练的进行，gate 逐渐增大，条件信息逐步"流入"主干网络。</p>
 
