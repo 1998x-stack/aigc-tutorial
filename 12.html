@@ -245,7 +245,7 @@ for t in reversed(range(steps)):
 
         <p>LCM 的惊艳之处在于：</p>
         <ul>
-            <li><strong>超低延迟</strong>：1-4 步生成，比原始扩散模型快 250-1000 倍</li>
+            <li><strong>超低延迟</strong>：1-4 步生成。相比 1000 步的原始 DDPM，步数上快约 250-1000 倍；而与社区常用的 20-50 步采样器相比，实际端到端加速通常在 5-50 倍量级</li>
             <li><strong>无需特殊硬件</strong>：蒸馏在普通 GPU 上即可完成，生成的 LCM LoRA 可以叠加在其他模型上</li>
             <li><strong>兼容性</strong>：LCM LoRA 权重可以加载到绝大多数 SD 1.5 和 SDXL 模型上</li>
         </ul>
