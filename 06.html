@@ -78,13 +78,21 @@
 
         <p>自回归模型的核心思想非常简洁：<strong>将联合概率分布分解为条件概率的连乘</strong>。</p>
 
-        <pre><code>对于一个序列 x = (x₁, x₂, ..., x_T)，自回归分解为：
-  P(x) = P(x₁) · P(x₂ | x₁) · P(x₃ | x₁, x₂) · ... · P(x_T | x₁, ..., x_{T-1})
-       = ∏_{t=1}^{T} P(x_t | x_{&lt;t})
+        <p>对于一个序列 <math class="math-inline" aria-label="x 等于 (x1,x2,...,xT)"><mi>x</mi><mo>=</mo><mo>(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><msub><mi>x</mi><mn>2</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>x</mi><mi>T</mi></msub><mo>)</mo></math>，自回归分解为：</p>
 
-其中 x_{&lt;t} 表示位置 t 之前的所有 token</code></pre>
+        <div class="math-equation" role="group" aria-label="自回归的链式分解">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="自回归链式分解公式，可横向滚动">
+                <math display="block" aria-label="P(x) 等于 t 从 1 到 T 对 P(x_t 给定 x 下标小于 t) 的连乘；也等于 P(x1) 乘 P(x2|x1) 一直乘到 P(x_T 给定 x 下标 1 到 T-1)">
+                    <mi>P</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo>
+                    <munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover>
+                    <mi>P</mi><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>|</mo><msub><mi>x</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo>
+                    <mo>=</mo><mi>P</mi><mo>(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo><mi>P</mi><mo>(</mo><msub><mi>x</mi><mn>2</mn></msub><mo>|</mo><msub><mi>x</mi><mn>1</mn></msub><mo>)</mo><mo>⋯</mo><mi>P</mi><mo>(</mo><msub><mi>x</mi><mi>T</mi></msub><mo>|</mo><msub><mi>x</mi><mrow><mn>1</mn><mo>:</mo><mi>T</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(6.1)</span>
+            </div>
+        </div>
 
-        <p>这个等式利用了概率论的链式法则，是精确的（不是近似）。这意味着只要你能准确建模每个条件概率 P(x_t | x_{&lt;t})，你就能精确地写出整个序列的概率。</p>
+        <p>其中 <math class="math-inline" aria-label="x 下标小于 t"><msub><mi>x</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub></math> 表示位置 <math class="math-inline" aria-label="t"><mi>t</mi></math> 之前的所有 token。这个等式利用了概率论的链式法则，是精确的（不是近似）。这意味着只要你能准确建模每个条件概率 P(x_t | x_{&lt;t})，你就能精确地写出整个序列的概率。</p>
 
         <p>生成时，你从左到右逐 token 生成：先预测 x₁，然后以 x₁ 为条件预测 x₂，再以 x₁,x₂ 为条件预测 x₃，直到序列结束。</p>
 
