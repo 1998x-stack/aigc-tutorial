@@ -225,12 +225,12 @@ for t in reversed(range(steps)):
         <p>训练 LCM 的损失函数：</p>
         <div class="math-equation" role="group" aria-label="LCM 一致性蒸馏损失">
             <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="LCM 损失函数，可横向滚动">
-                <math display="block" aria-label="L_CM 等于对 λ(t) 乘 d( f_θ(x_{t_{n+1}}, t_{n+1}), f_θ 负(x 帽_{t_n}, t_n) ) 取期望">
+                <math display="block" aria-label="L_CM 等于对 λ(t) 乘 d( f_θ(x_{t_{n+1}}, t_{n+1}), f_θ 负(x 帽_{t_n} 上标 φ, t_n) ) 取期望">
                     <msub><mi>L</mi><mi>CM</mi></msub><mo>=</mo><mi>𝔼</mi><mo>[</mo>
                     <mi>λ</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>⋅</mo><mi>d</mi><mo>(</mo>
                     <msub><mi>f</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></msub><mo>,</mo><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>)</mo>
                     <mo>,</mo>
-                    <msubsup><mi>f</mi><mi>θ</mi><mo>−</mo></msubsup><mo>(</mo><msub><mover><mi>x</mi><mo>^</mo></mover><msub><mi>t</mi><mi>n</mi></msub></msub><mo>,</mo><msub><mi>t</mi><mi>n</mi></msub><mo>)</mo>
+                    <msubsup><mi>f</mi><mi>θ</mi><mo>−</mo></msubsup><mo>(</mo><msubsup><mover><mi>x</mi><mo>^</mo></mover><msub><mi>t</mi><mi>n</mi></msub><mi>φ</mi></msubsup><mo>,</mo><msub><mi>t</mi><mi>n</mi></msub><mo>)</mo>
                     <mo>)</mo><mo>]</mo>
                 </math>
                 <span class="eq-num">(12.4)</span>
@@ -239,7 +239,7 @@ for t in reversed(range(steps)):
 
         <ul>
             <li><math class="math-inline" aria-label="f_θ 负是目标网络"><msubsup><mi>f</mi><mi>θ</mi><mo>−</mo></msubsup></math> 是目标网络（EMA 更新，不参与梯度回传）</li>
-            <li><math class="math-inline" aria-label="x 帽_{t_n} 是一步估计"><msub><mover><mi>x</mi><mo>^</mo></mover><msub><mi>t</mi><mi>n</mi></msub></msub></math> 是使用数值求解器从 <math class="math-inline" aria-label="t_{n+1}"><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></math> 到 <math class="math-inline" aria-label="t_n"><msub><mi>t</mi><mi>n</mi></msub></math> 的一步估计</li>
+            <li><math class="math-inline" aria-label="x 帽_{t_n} 上标 φ 是一步估计"><msubsup><mover><mi>x</mi><mo>^</mo></mover><msub><mi>t</mi><mi>n</mi></msub><mi>φ</mi></msubsup></math> 是使用数值求解器从 <math class="math-inline" aria-label="t_{n+1}"><msub><mi>t</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></math> 到 <math class="math-inline" aria-label="t_n"><msub><mi>t</mi><mi>n</mi></msub></math> 的一步估计，上标 φ 为条件嵌入（如文本提示）</li>
             <li><math class="math-inline" aria-label="d 是距离函数"><mi>d</mi><mo>(</mo><mo>⋅</mo><mo>)</mo></math> 是距离函数（通常使用 MSE 或 LPIPS）</li>
         </ul>
 
