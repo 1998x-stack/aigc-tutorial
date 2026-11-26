@@ -138,7 +138,7 @@ class SpacetimePatchEmbed(nn.Module):
 
         <h2>22.3 Sora 2 与 sCM 实时生成</h2>
 
-        <p>2025 年底，OpenAI 发布了 Sora 2，它基于 <strong>sCM（Simplified Consistency Matching）</strong> 架构实现了实时视频生成。sCM 的核心思想是将 Flow Matching 的 ODE 求解步骤缩减到 1-2 步——它学习的是 Flow Matching 轨迹的"一致性映射"：</p>
+        <p>据公开报道，OpenAI 在 2025 年底发布 Sora 2 时展示了少步、接近实时的视频生成能力，其技术路线常被与 <strong>sCM（连续时间一致性模型，详见第 27 章）</strong> 一类方法联系在一起。sCM 的核心思想是把扩散 / Flow Matching 的概率流 ODE 求解步骤压缩到 1-2 步——它学习的是从噪声直接到数据的“一致性映射”：</p>
 
         <pre><code># sCM 的核心思路
 # 传统 Flow Matching 需要 N 步求解 ODE：
@@ -152,7 +152,7 @@ class SpacetimePatchEmbed(nn.Module):
 # 2. 训练学生网络 f_θ 学习从噪声到数据的直接映射
 # 3. 加入 GAN 损失提高单步生成质量</code></pre>
 
-        <p>Sora 2 以此实现了 1-2 步的实时视频生成——输入 prompt 后不到一秒就能看到结果。但 sCM 也有代价：单步生成的质量仍然不如多步 ODE 求解的结果，尤其是在细节一致性和运动流畅度上。</p>
+        <p>沿这一路线，模型可在 1-2 步内生成视频片段，交互延迟比多步采样大幅下降。但少步生成也有代价：单步结果的质量仍不如多步 ODE 求解，尤其在细节一致性和运动流畅度上。具体产品能力请以官方演示与文档为准，本节未逐条核对。</p>
 
         <h2>22.4 视频评估指标</h2>
 
@@ -179,8 +179,12 @@ class SpacetimePatchEmbed(nn.Module):
             <li><strong>Seedance 2.5（字节跳动）：</strong>实现了原生 4K 分辨率、30 秒长度的视频生成，且支持视频编辑功能（局部替换、风格转换、时长伸缩）。其背后的 Video DiT 采用了 3D RoPE 位置编码，让模型能在不同分辨率之间泛化。</li>
             <li><strong>Gemini Omni（Google）：</strong>多模态理解+生成统一模型，可以"看一眼图片/视频就能理解内容并生成新的视频"。标志着理解与生成的进一步融合。</li>
             <li><strong>Sora 2 的 sCM 实时生成：</strong>1 步生成 720p 视频，虽然细节质量不如多步推理，但在交互式场景（如实时直播、游戏 NPC 生成）中已有惊艳表现。</li>
-            <li><strong>可灵 3.0：</strong>实现"文生视频 + 图生视频 + 视频编辑 + 视频延展"的全链路覆盖，单次生成最长 60 秒。</li>
+            <li><strong>可灵 3.0：</strong>实现“文生视频 + 图生视频 + 视频编辑 + 视频延展”的全链路覆盖。</li>
         </ul>
+
+        <div class="tip">
+            <strong>💡 来源与时效说明：</strong>本节列举的 2025–2026 年产品能力（分辨率、时长、编辑功能等）来自厂商发布会与公开报道，更新极快且未经本教程逐条核对，请以官方最新文档为准。
+        </div>
 
         <h2>22.6 视频生成的挑战</h2>
 
