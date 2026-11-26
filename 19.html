@@ -108,6 +108,29 @@
             <li>每个 MM-DiT Block 的输出会分别更新文本流和图像流的状态。</li>
         </ul>
 
+        <p>用公式表达这个"拼接注意力"过程：两条流各自做 QKV 投影后再拼接——</p>
+
+        <div class="math-equation" role="group" aria-label="MM-DiT 的双流 QKV 投影">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="MM-DiT 双流 QKV 公式，可横向滚动">
+                <math display="block" aria-label="Q 等于 [T W_t^Q ; I W_i^Q]，K 等于 [T W_t^K ; I W_i^K]，V 等于 [T W_t^V ; I W_i^V]">
+                    <mi>Q</mi><mo>=</mo><mo>[</mo><mi>T</mi><msubsup><mi>W</mi><mi>t</mi><mi>Q</mi></msubsup><mo>;</mo><mi>I</mi><msubsup><mi>W</mi><mi>i</mi><mi>Q</mi></msubsup><mo>]</mo><mo>,</mo>
+                    <mspace width="1em"/><mi>K</mi><mo>=</mo><mo>[</mo><mi>T</mi><msubsup><mi>W</mi><mi>t</mi><mi>K</mi></msubsup><mo>;</mo><mi>I</mi><msubsup><mi>W</mi><mi>i</mi><mi>K</mi></msubsup><mo>]</mo><mo>,</mo>
+                    <mspace width="1em"/><mi>V</mi><mo>=</mo><mo>[</mo><mi>T</mi><msubsup><mi>W</mi><mi>t</mi><mi>V</mi></msubsup><mo>;</mo><mi>I</mi><msubsup><mi>W</mi><mi>i</mi><mi>V</mi></msubsup><mo>]</mo>
+                </math>
+                <span class="eq-num">(19.1)</span>
+            </div>
+        </div>
+
+        <div class="math-equation" role="group" aria-label="MM-DiT 的联合注意力">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="MM-DiT 联合注意力公式，可横向滚动">
+                <math display="block" aria-label="Attention 等于 softmax( Q K 转置 除以 根号 d ) V，其中 Q K V 为拼接后的矩阵">
+                    <mi>Attention</mi><mo>=</mo>
+                    <mi>softmax</mi><mo>(</mo><mfrac><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow><msqrt><mi>d</mi></msqrt></mfrac><mo>)</mo><mi>V</mi>
+                </math>
+                <span class="eq-num">(19.2)</span>
+            </div>
+        </div>
+
         <p>用伪代码来理解这个过程：</p>
 
         <pre><code>class MMDiTBlock(nn.Module):
@@ -155,6 +178,30 @@ def rectified_flow_loss(model, x_1, text_embed):
     # 模型预测速度
     pred = model(x_t, t, text_embed)
     return mse_loss(pred, target)</code></pre>
+
+        <p>其中前向路径与目标速度为：</p>
+
+        <div class="math-equation" role="group" aria-label="Rectified Flow 的直线路径">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Rectified Flow 路径公式，可横向滚动">
+                <math display="block" aria-label="x_t 等于 (1-t) x_0 加 t x_1；目标速度 v 等于 x_1 减 x_0">
+                    <msub><mi>x</mi><mi>t</mi></msub><mo>=</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo>)</mo><msub><mi>x</mi><mn>0</mn></msub><mo>+</mo><mi>t</mi><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo>
+                    <mspace width="1em"/><mi>v</mi><mo>=</mo><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub>
+                </math>
+                <span class="eq-num">(19.3)</span>
+            </div>
+        </div>
+
+        <p>训练目标即最小化预测速度与目标速度之间的均方误差：</p>
+
+        <div class="math-equation" role="group" aria-label="Rectified Flow 的训练损失">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Rectified Flow 损失公式，可横向滚动">
+                <math display="block" aria-label="L 等于对 v_θ(x_t,t,c) 减 (x_1 减 x_0) 的模长平方 取期望">
+                    <mi>L</mi><mo>=</mo><msub><mi>𝔼</mi><mrow><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>t</mi></mrow></msub>
+                    <mo>‖</mo><msub><mi>v</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>c</mi><mo>)</mo><mo>−</mo><mo>(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo><msup><mo>‖</mo><mn>2</mn></msup>
+                </math>
+                <span class="eq-num">(19.4)</span>
+            </div>
+        </div>
 
         <p>这样做的好处显而易见：由于路径是直线，从噪声到数据的映射是一条最短路径。推理时，只需要沿着这条直线走很少的步数（甚至 4 步就能出合理结果），而不需要像 DDPM 那样绕弯子。</p>
 
