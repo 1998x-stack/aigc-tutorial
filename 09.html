@@ -200,7 +200,7 @@
             </div>
         </div>
 
-        <p>Improved DDPM 带来的提升是显著的：在 ImageNet 64×64 上，FID 从 3.26（原始 DDPM）降低到了 2.15，且可以只用 100 步生成质量尚可的样本。</p>
+        <p>Improved DDPM 带来的提升是显著的：学习方差后，模型可以用<strong>比原始 DDPM 少一个数量级的采样步数</strong>（约 100 步，而非 1000 步）获得相近的样本质量（Nichol &amp; Dhariwal, 2021）。原论文报告的具体 FID 数值随数据集与评估设置而变，此处不逐一引用，精确数字请以原文表 1 为准。</p>
 
         <div class="warning">
             <strong>⚠️ 真实的踩坑故事：</strong>我曾经在一个 LDM 项目中尝试自行修改潜空间的缩放因子（scaling factor），想通过调整它来改变生成图像的对比度。我天真地以为"缩放因子越小，生成图像越柔和"——结果当我将缩放因子从默认的 0.18215 改为 0.5 时，生成的所有图像都变成了灰蒙蒙的一片，细节完全丢失。排查了两天才发现原因：VAE 的潜空间分布统计特性是固定的，缩放因子必须匹配 VAE 训练时使用的归一化策略。错误的缩放因子会导致扩散模型在"错误的尺度"上做去噪，生成结果自然异常。这个教训是：<strong>不要随意修改潜空间的缩放因子，除非你完全理解 VAE 的统计特性</strong>。
@@ -212,6 +212,7 @@
 <ul class="source-list">
     <li>Song et al., <em>Denoising Diffusion Implicit Models</em>, 2020（DDIM）. <a href="https://arxiv.org/abs/2010.02502">arXiv:2010.02502</a></li>
     <li>Rombach et al., <em>High-Resolution Image Synthesis with Latent Diffusion Models</em>, CVPR 2022（LDM）. <a href="https://arxiv.org/abs/2112.10752">arXiv:2112.10752</a></li>
+    <li>Nichol &amp; Dhariwal, <em>Improved Denoising Diffusion Probabilistic Models</em>, 2021（学习方差与余弦调度）. <a href="https://arxiv.org/abs/2102.09672">arXiv:2102.09672</a></li>
 </ul>
 
 <div class="footer-nav">
