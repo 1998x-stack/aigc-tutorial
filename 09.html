@@ -83,9 +83,21 @@
 
         <p>DDIM 的关键在于，它保留了 DDPM 的<strong>前向过程</strong>不变（保证训练好的去噪网络仍然适用），但在<strong>反向过程</strong>中采用了一个非 Markov 的公式：</p>
 
-        <pre><code>x_{t-1} = √(ᾱ_{t-1}) · f_θ(x_t, t) + √(1 - ᾱ_{t-1} - σ_t²) · ε_θ(x_t, t) + σ_t · ε_t</code></pre>
+        <div class="math-equation" role="group" aria-label="DDIM 的反向更新公式">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="DDIM 反向更新公式，可横向滚动">
+                <math display="block" aria-label="x_{t-1} 等于 根号 ᾱ_{t-1} 乘 f_θ(x_t,t) 加 根号(1 减 ᾱ_{t-1} 减 σ_t 平方) 乘 ε_θ(x_t,t) 加 σ_t ε_t">
+                    <msub><mi>x</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>=</mo>
+                    <msqrt><msub><mover><mi>α</mi><mo>¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></msqrt>
+                    <msub><mi>f</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>+</mo>
+                    <msqrt><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>−</mo><msubsup><mi>σ</mi><mi>t</mi><mn>2</mn></msubsup></msqrt>
+                    <msub><mi>ε</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>+</mo>
+                    <msub><mi>σ</mi><mi>t</mi></msub><msub><mi>ε</mi><mi>t</mi></msub>
+                </math>
+                <span class="eq-num">(9.1)</span>
+            </div>
+        </div>
 
-        <p>其中 f_θ(x_t, t) 是通过预测的噪声反推出的"预测的 x₀"。当 σ_t = 0 时，这个反向过程变成<strong>确定性</strong>的——相同的初始噪声 x_T 总是生成相同的输出，这使得 DDIM 具有了类似 GAN 的"隐空间插值"能力。</p>
+        <p>其中 <math class="math-inline" aria-label="f_θ(x_t,t) 是预测的 x0"><msub><mi>f</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo></math> 是通过预测的噪声反推出的"预测的 x₀"。当 <math class="math-inline" aria-label="σ_t = 0"><msub><mi>σ</mi><mi>t</mi></msub><mo>=</mo><mn>0</mn></math> 时，这个反向过程变成<strong>确定性</strong>的——相同的初始噪声 x_T 总是生成相同的输出，这使得 DDIM 具有了类似 GAN 的"隐空间插值"能力。</p>
 
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>DDIM 告诉我们，扩散模型的 Markov 链假设并不是必需的。只要保持前向过程的边缘分布 q(x_t|x₀) 不变，我们可以自由设计反向过程的采样轨迹。这类似于用不同的 ODE 求解器解同一个方程——殊途同归，但效率和性质截然不同。
@@ -100,6 +112,8 @@
             <tr><td>DDIM</td><td>50</td><td>4.67</td><td>是</td><td>支持</td></tr>
             <tr><td>DDIM</td><td>10</td><td>13.36</td><td>是</td><td>支持</td></tr>
         </table></div>
+
+        <p class="section-dek">表中 FID 为 CIFAR-10 无条件采样的文献报告值（Song et al., 2020; Nichol &amp; Dhariwal, 2021），不同实现与评估细节会有小幅差异，此处仅用于展示步数与质量的趋势。</p>
 
         <p>可以看到，DDIM 在 50-100 步时能保持与 DDPM 1000 步相当的质量，但速度提升了 10-20 倍。不过到了 10 步以下，DDIM 的质量也开始显著下降——这催生了后来的 DPMSolver 等更先进的 ODE 求解器方法（第 12 章详谈）。</p>
 
@@ -162,13 +176,29 @@
             <li><strong>混合损失</strong>：L_simple（MSE）+ λ · L_vlb（完整的变分下界），让模型在高 SNR（信噪比）区域也能准确建模</li>
         </ul>
 
-        <pre><code># Improved DDPM 的方差学习简化示意
-# 模型预测两个值: ε_θ 和 v_θ
-# 方差通过 v_θ 在两个边界之间插值:
-Σ_θ(x_t, t) = exp(v · log β_t + (1 - v) · log β̃_t)
+        <div class="math-equation" role="group" aria-label="Improved DDPM 的方差插值">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="Improved DDPM 方差公式，可横向滚动">
+                <math display="block" aria-label="Σ_θ(x_t,t) 等于 exp( v 乘 log β_t 加 (1-v) 乘 log β̃_t )">
+                    <msub><mi>Σ</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>)</mo><mo>=</mo>
+                    <mi>exp</mi><mo>(</mo><mi>v</mi><mi>log</mi><msub><mi>β</mi><mi>t</mi></msub><mo>+</mo>
+                    <mo>(</mo><mn>1</mn><mo>−</mo><mi>v</mi><mo>)</mo><mi>log</mi><msub><mover><mi>β</mi><mo>~</mo></mover><mi>t</mi></msub><mo>)</mo>
+                </math>
+                <span class="eq-num">(9.2)</span>
+            </div>
+        </div>
 
-# 其中 β_t 是前向过程噪声系数
-# β̃_t = (1 - ᾱ_{t-1}) / (1 - ᾱ_t) · β_t 是另一个边界</code></pre>
+        <p>其中两个边界分别为前向噪声系数 <math class="math-inline" aria-label="β_t"><msub><mi>β</mi><mi>t</mi></msub></math> 与：</p>
+
+        <div class="math-equation" role="group" aria-label="方差学习的下边界">
+            <div class="math-scroll" data-math-scroll tabindex="0" role="region" aria-label="下边界公式，可横向滚动">
+                <math display="block" aria-label="β̃_t 等于 (1 减 ᾱ_{t-1}) 除以 (1 减 ᾱ_t) 再乘 β_t">
+                    <msub><mover><mi>β</mi><mo>~</mo></mover><mi>t</mi></msub><mo>=</mo>
+                    <mfrac><mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow><mrow><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></mrow></mfrac>
+                    <msub><mi>β</mi><mi>t</mi></msub>
+                </math>
+                <span class="eq-num">(9.3)</span>
+            </div>
+        </div>
 
         <p>Improved DDPM 带来的提升是显著的：在 ImageNet 64×64 上，FID 从 3.26（原始 DDPM）降低到了 2.15，且可以只用 100 步生成质量尚可的样本。</p>
 
