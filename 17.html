@@ -12,6 +12,12 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .fsdp-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #e9d5ff; border-radius: 14px; }
+        .fsdp-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .fsdp-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #6b21a8; }
+        .fsdp-demo select { font: inherit; max-width: 100%; }
+        .fsdp-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .fsdp-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #f3e8ff; border-left: 5px solid #9333ea; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -135,6 +141,48 @@ for batch in dataloader:
 
         <p>FSDP 提供了三种分片策略：<strong>FULL_SHARD</strong>（全分片，最省显存但通信最多）、<strong>HYBRID_SHARD</strong>（混合分片，节点内分片 + 节点间复制）、<strong>SHARD_GRAD_OP</strong>（仅分片梯度和优化器状态，不分片权重）。实践中，HYBRID_SHARD 往往是最优选择——它在通信开销和显存节省之间取得了很好的平衡。</p>
 
+        <section class="fsdp-demo" aria-labelledby="fsdp17-title">
+            <h3 id="fsdp17-title">交互演示：分片策略下的单卡训练显存</h3>
+            <p>按 AdamW + FP32 训练状态估算：每参数约 16 字节（权重 4 + 梯度 4 + 动量 8，与本章表 17.1 一致），<strong>不含中间激活</strong>。选择模型与 GPU 数 N，观察 DDP、SHARD_GRAD_OP、FULL_SHARD 三种策略的单卡显存。数值为公式换算，非实测。</p>
+            <div class="controls">
+                <label>模型参数量
+                    <select data-fsdp="p">
+                        <option value="0.6">DiT-XL/2 (0.6B)</option>
+                        <option value="2.6">SDXL (2.6B)</option>
+                        <option value="12" selected>FLUX.1 (12B)</option>
+                    </select>
+                </label>
+                <label>GPU 数 N
+                    <select data-fsdp="n">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="4">4</option>
+                        <option value="8" selected>8</option>
+                        <option value="16">16</option>
+                        <option value="32">32</option>
+                        <option value="64">64</option>
+                        <option value="128">128</option>
+                    </select>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 200" role="img" aria-labelledby="fsdp17-svg-title">
+                <title id="fsdp17-svg-title">三种并行策略下单卡训练显存占用对比条</title>
+                <text x="30" y="20" font-size="11" fill="#64748b">DDP（权重+梯度+优化器全部复制）</text>
+                <rect x="30" y="26" width="560" height="18" rx="5" fill="#fee2e2"/>
+                <rect data-fsdp="ddp" x="30" y="26" width="0" height="18" rx="5" fill="#dc2626"/>
+                <text data-fsdp="ddpT" x="30" y="60" font-size="12" fill="#7f1d1d"></text>
+                <text x="30" y="80" font-size="11" fill="#64748b">SHARD_GRAD_OP（仅分片梯度+优化器）</text>
+                <rect x="30" y="86" width="560" height="18" rx="5" fill="#fef9c3"/>
+                <rect data-fsdp="gradop" x="30" y="86" width="0" height="18" rx="5" fill="#d97706"/>
+                <text data-fsdp="gradopT" x="30" y="120" font-size="12" fill="#713f12"></text>
+                <text x="30" y="140" font-size="11" fill="#64748b">FULL_SHARD（权重+梯度+优化器全分片）</text>
+                <rect x="30" y="146" width="560" height="18" rx="5" fill="#dcfce7"/>
+                <rect data-fsdp="full" x="30" y="146" width="0" height="18" rx="5" fill="#16a34a"/>
+                <text data-fsdp="fullT" x="30" y="180" font-size="12" fill="#14532d"></text>
+            </svg>
+            <p class="fsdp-out" data-fsdp="out" aria-live="polite"></p>
+        </section>
+
         <div class="tip">
             <strong>💡 实战经验：</strong>用 FSDP 训练扩散模型时，有一个容易被忽视的细节——<strong>和 BN（BatchNorm）的冲突</strong>。在扩散模型的 U-Net 中，部分实现使用了 GroupNorm 或 BatchNorm。如果使用 BatchNorm，FSDP 的分片会导致 BN 统计信息的计算不准确。解决方案是：要么把 BN 替换为 GN（GroupNorm），要么在 FSDP 包装时排除 BN 层。SD 系列模型已经全部使用 GroupNorm，所以这个问题在新模型中不太常见。
         </div>
@@ -231,5 +279,28 @@ for batch in dataloader:
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.fsdp-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-fsdp="' + n + '"]'); };
+    function render() {
+        var P = parseFloat(q('p').value), N = parseInt(q('n').value, 10);
+        var ddp = 16 * P, gradop = 4 * P + 12 * P / N, full = 16 * P / N, mx = ddp;
+        var w = function (v) { return Math.min(560, v / mx * 560).toFixed(1); };
+        q('ddp').setAttribute('width', w(ddp));
+        q('gradop').setAttribute('width', w(gradop));
+        q('full').setAttribute('width', w(full));
+        q('ddpT').textContent = '单卡 ≈ ' + ddp.toFixed(1) + ' GB（总 ' + (16 * P).toFixed(1) + ' GB，每卡都存）';
+        q('gradopT').textContent = '单卡 ≈ ' + gradop.toFixed(1) + ' GB（权重 4P 仍复制）';
+        q('fullT').textContent = '单卡 ≈ ' + full.toFixed(1) + ' GB（降低约 ' + (N) + ' 倍）';
+        q('out').innerHTML = '模型 ' + P + 'B，N = <b>' + N + '</b>：DDP 单卡 <b>' + ddp.toFixed(1) + ' GB</b>，SHARD_GRAD_OP 单卡 <b>' + gradop.toFixed(1) + ' GB</b>，FULL_SHARD 单卡 <b>' + full.toFixed(1) + ' GB</b>。<br>'
+            + 'FULL_SHARD 将 16P 的总显存均匀摊到 N 卡（通信最多）；SHARD_GRAD_OP 只分片梯度与优化器状态、权重仍每卡一份；DDP 不做分片。三者均未计入中间激活，实际峰值会更高。';
+    }
+    q('p').addEventListener('change', render);
+    q('n').addEventListener('change', render);
+    render();
+})();
+</script>
 </body>
 </html>
