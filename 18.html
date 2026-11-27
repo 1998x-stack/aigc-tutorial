@@ -12,6 +12,12 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .lora-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #bbf7d0; border-radius: 14px; }
+        .lora-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .lora-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #14532d; }
+        .lora-demo select { font: inherit; max-width: 100%; }
+        .lora-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .lora-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #dcfce7; border-left: 5px solid #16a34a; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -101,6 +107,42 @@
         <p>当基础模型无法满足特定场景的质量要求时，我们需要对模型进行微调。当前主流的微调方法有三种：</p>
 
         <p><strong>LoRA（Low-Rank Adaptation，低秩适配）</strong>：这是最常用、最轻量的微调方法。核心思想是冻结原始权重，只训练两个低秩矩阵 A 和 B 的乘积（A∈R^{d×r}, B∈R^{r×k}，其中 r << d, k），从而以极小的参数量（通常只有原始模型的 0.1%-1%）来适配特定风格或概念。LoRA 在训练时可以直接插入到 Cross-Attention 的 QKV 投影层中。</p>
+
+        <section class="lora-demo" aria-labelledby="lora18-title">
+            <h3 id="lora18-title">交互演示：LoRA 的秩与可训练参数量</h3>
+            <p>对一个 d×d 的权重矩阵，LoRA 冻结原权重、只训练两个低秩矩阵 A∈R^{r×d}、B∈R^{d×r}，可训练参数为 2·r·d，而原矩阵有 d² 个。选择维度 d 与秩 r，观察单层参数量占比。数值为公式的直接换算，非实测。</p>
+            <div class="controls">
+                <label>权重维度 d
+                    <select data-lora="d">
+                        <option value="320" selected>320（SD 基础通道）</option>
+                        <option value="512">512</option>
+                        <option value="640">640</option>
+                        <option value="768">768（CLIP 隐维）</option>
+                        <option value="1024">1024</option>
+                        <option value="1280">1280</option>
+                    </select>
+                </label>
+                <label>秩 r
+                    <select data-lora="r">
+                        <option value="4">4</option>
+                        <option value="8">8</option>
+                        <option value="16" selected>16</option>
+                        <option value="32">32</option>
+                        <option value="64">64</option>
+                        <option value="128">128</option>
+                    </select>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 120" role="img" aria-labelledby="lora18-svg-title">
+                <title id="lora18-svg-title">LoRA 可训练参数量占原矩阵的比例条</title>
+                <text x="30" y="28" font-size="11" fill="#64748b">可训练参数占比 = 2rd / d² = 2r/d</text>
+                <rect x="30" y="40" width="560" height="20" rx="6" fill="#dcfce7"/>
+                <rect data-lora="bar" x="30" y="40" width="0" height="20" rx="6" fill="#16a34a"/>
+                <text data-lora="barText" x="30" y="82" font-size="12" fill="#14532d"></text>
+                <text data-lora="full" x="30" y="104" font-size="12" fill="#14532d"></text>
+            </svg>
+            <p class="lora-out" data-lora="out" aria-live="polite"></p>
+        </section>
 
         <p><strong>DreamBooth（个性化生成）</strong>：对特定物体或人脸做个性化生成的方法。它用少量（5-20 张）参考图像，对整个 U-Net 做全量微调（也可以结合 LoRA 做参数高效微调），同时使用"先验保留损失"（Prior Preservation Loss）来防止过拟合——即保证模型在生成其他概念时质量不退化。</p>
 
@@ -241,5 +283,25 @@ print(f"Captured {len(intermediates)} intermediate outputs")
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.lora-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-lora="' + n + '"]'); };
+    var fmt = function (e) { return e.toLocaleString('en-US'); };
+    function render() {
+        var d = parseInt(q('d').value, 10), r = parseInt(q('r').value, 10);
+        var full = d * d, lora = 2 * r * d, ratio = lora / full;
+        q('bar').setAttribute('width', Math.min(560, ratio * 560).toFixed(1));
+        q('barText').textContent = '占比 = 2×' + r + '×' + d + ' / ' + d + '² = ' + (ratio * 100).toFixed(2) + '%';
+        q('full').textContent = '原矩阵 d² = ' + fmt(full) + '　|　LoRA 可训练 2rd = ' + fmt(lora) + ' 个参数';
+        q('out').innerHTML = 'd = <b>' + d + '</b>，r = <b>' + r + '</b>：原权重矩阵有 <b>' + fmt(full) + '</b> 个参数，LoRA 只需训练 <b>' + fmt(lora) + '</b> 个（约 ' + (ratio * 100).toFixed(2) + '%）。<br>'
+            + '单层占比只取决于秩与维度之比 2r / d；实际只对部分注意力投影层插入 LoRA，并叠加多个矩阵，全模型可训练参数占比通常进一步下降（如 18.2 节所述 0.1%–1% 量级）。';
+    }
+    q('d').addEventListener('change', render);
+    q('r').addEventListener('change', render);
+    render();
+})();
+</script>
 </body>
 </html>
