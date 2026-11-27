@@ -12,6 +12,12 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .sdx-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #bae6fd; border-radius: 14px; }
+        .sdx-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .sdx-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #0c4a6e; }
+        .sdx-demo select { font: inherit; max-width: 100%; }
+        .sdx-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .sdx-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #e0f2fe; border-left: 5px solid #0284c7; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -175,6 +181,32 @@
 
         <p>每个注意力头的输出会经过一个线性投影后与输入相加（残差连接），使得模型可以选择性地"关注"文本中对应位置的语义信息。例如，生成 "a red apple on a blue table" 时，不同区域的像素会通过 Cross-Attention 找到对应的语义 token。</p>
 
+        <section class="sdx-demo" aria-labelledby="sdx10-title">
+            <h3 id="sdx10-title">交互演示：Cross-Attention 的矩阵规模</h3>
+            <p>Cross-Attention 中 Q 来自图像侧（N 个潜位置），K/V 来自文本侧（固定 77 个 token）。选择潜空间分辨率，观察注意力矩阵 QKᵀ 的规模 N×77 与图像内部自注意力 N×N 的对比（若该层启用自注意力）。条形采用对数刻度；数值为按公式的直接换算，非实测耗时。</p>
+            <div class="controls">
+                <label>潜空间分辨率 H×H
+                    <select data-sdx="h">
+                        <option value="16">16×16</option>
+                        <option value="32" selected>32×32</option>
+                        <option value="64">64×64</option>
+                        <option value="128">128×128</option>
+                    </select>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 150" role="img" aria-labelledby="sdx10-svg-title">
+                <title id="sdx10-svg-title">Cross-Attention 与自注意力的矩阵元素规模对比（对数刻度）</title>
+                <text x="30" y="30" font-size="11" fill="#64748b">Cross-Attention 矩阵 N×77</text>
+                <rect x="30" y="38" width="560" height="18" rx="5" fill="#e0f2fe"/>
+                <rect data-sdx="cross" x="30" y="38" width="0" height="18" rx="5" fill="#0284c7"/>
+                <text x="30" y="82" font-size="11" fill="#64748b">自注意力矩阵 N×N（如启用）</text>
+                <rect x="30" y="90" width="560" height="18" rx="5" fill="#fee2e2"/>
+                <rect data-sdx="self" x="30" y="90" width="0" height="18" rx="5" fill="#dc2626"/>
+                <text data-sdx="sText" x="30" y="132" font-size="12" fill="#0c4a6e"></text>
+            </svg>
+            <p class="sdx-out" data-sdx="out" aria-live="polite"></p>
+        </section>
+
         <h2>10.5 SD 版本演进对比</h2>
 
         <p>从 2022 年 8 月的 SD 1.0 到 2024 年的 SD 3.0，SD 经历了多次重大迭代：</p>
@@ -227,5 +259,27 @@
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.sdx-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-sdx="' + n + '"]'); };
+    var MAXLOG = 9;
+    var bar = function (e) { return Math.max(2, Math.log(Math.max(e, 1)) / Math.LN10 / MAXLOG * 560); };
+    var fmt = function (e) { return e >= 1e6 ? (e / 1e6).toFixed(2) + 'M' : (e >= 1e3 ? (e / 1e3).toFixed(1) + 'K' : String(e)); };
+    function render() {
+        var H = parseInt(q('h').value, 10), N = H * H, cross = N * 77, self = N * N;
+        q('cross').setAttribute('width', bar(cross).toFixed(1));
+        q('self').setAttribute('width', bar(self).toFixed(1));
+        q('sText').textContent = 'N = ' + N + '，Cross 矩阵 = ' + fmt(cross) + '，自注意力矩阵 = ' + fmt(self);
+        q('out').innerHTML = '潜空间 ' + H + '×' + H + ' → 图像侧 token 数 N = <b>' + N + '</b>。<br>'
+            + 'Cross-Attention 的 QKᵀ 形状为 N×77 = <b>' + fmt(cross) + '</b> 个元素，随 N <strong>线性</strong>增长；'
+            + '若该层启用自注意力，则矩阵为 N×N = <b>' + fmt(self) + '</b>，随 N <strong>平方</strong>增长。'
+            + '这正是 SD 把文本长度固定在 77、并在不同分辨率上分配注意力的原因之一。';
+    }
+    q('h').addEventListener('change', render);
+    render();
+})();
+</script>
 </body>
 </html>
