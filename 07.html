@@ -12,6 +12,17 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* FID 分解交互演示 */
+        .fid { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .fid h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .fid-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .fid-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .fid-controls input[type="range"], .fid-controls button { font: inherit; max-width: 100%; }
+        .fid-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .fid-controls button:hover { background: #ede9fe; }
+        .fid-chart { width: 100%; height: auto; display: block; background: #fff; border-radius: 10px; }
+        .fid-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        @media print { .fid { break-inside: avoid; } }
     </style>
 
 </head>
@@ -163,6 +174,29 @@
             <li>FID 越小越好。常见经验阈值：FID &lt; 10 优秀、10–30 良好、&gt; 50 较差（阈值为经验参考，非论文硬性结论）。</li>
         </ul>
 
+        <section class="fid" aria-labelledby="fid7-title">
+            <h3 id="fid7-title">交互演示：FID 的两项各代表什么</h3>
+            <p>一维简化下，多元 FID 退化为 <code>FID = (μ_r−μ_g)² + (σ_r−σ_g)²</code>：第一项惩罚均值偏移，第二项惩罚方差差异（多样性/风格不一致）。固定真实分布 N(0,1)，拖动生成分布的 μ_g、σ_g。此处为一维演示，真实 FID 在高维 Inception 特征上计算。</p>
+            <div class="fid-controls">
+                <label>生成均值 μ_g：<output data-fid="muval">0.80</output>
+                    <input type="range" data-fid="mu" min="-3" max="3" value="0.8" step="0.05">
+                </label>
+                <label>生成标准差 σ_g：<output data-fid="sgval">1.20</output>
+                    <input type="range" data-fid="sg" min="0.2" max="3" value="1.2" step="0.05">
+                </label>
+                <button type="button" data-fid="match">让分布完全匹配</button>
+            </div>
+            <svg class="fid-chart" viewBox="0 0 640 240" role="img" aria-labelledby="fid7-svg-title">
+                <title id="fid7-svg-title">真实分布与生成分布两条高斯曲线的对比，以及 FID 的均值项与方差项</title>
+                <line x1="40" y1="200" x2="600" y2="200" stroke="#94a3b8" stroke-width="1.5"/>
+                <path data-fid="pref" fill="none" stroke="#0ea5e9" stroke-width="2.5" d=""/>
+                <path data-fid="pgen" fill="none" stroke="#dc2626" stroke-width="2.5" d=""/>
+                <text x="48" y="24" font-size="12" fill="#0369a1">— 真实分布 N(0,1)</text>
+                <text x="250" y="24" font-size="12" fill="#b91c1c">— 生成分布</text>
+            </svg>
+            <p class="fid-out" data-fid="out" aria-live="polite"></p>
+        </section>
+
         <p><strong>FID 的优缺点总结</strong>：</p>
         <div class="table-scroll"><table>
             <tr><th>优点</th><th>缺点</th></tr>
@@ -265,5 +299,39 @@
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.fid');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-fid="' + n + '"]'); };
+    var X0 = -4, X1 = 4, PX0 = 40, PX1 = 600, BASE = 200, TOP = 40, MR = 0, SR = 1;
+    function path(mu, sg) {
+        var pts = [];
+        for (var i = 0; i <= 80; i++) {
+            var x = X0 + (X1 - X0) * i / 80;
+            var y = Math.exp(-Math.pow(x - mu, 2) / (2 * sg * sg));
+            pts.push((PX0 + (PX1 - PX0) * i / 80).toFixed(1) + ',' + (BASE - (BASE - TOP) * y).toFixed(1));
+        }
+        return 'M' + pts.join(' L');
+    }
+    function render() {
+        var mu = parseFloat(q('mu').value), sg = parseFloat(q('sg').value);
+        q('muval').textContent = mu.toFixed(2);
+        q('sgval').textContent = sg.toFixed(2);
+        q('pref').setAttribute('d', path(MR, SR));
+        q('pgen').setAttribute('d', path(mu, sg));
+        var meanTerm = Math.pow(mu - MR, 2), varTerm = Math.pow(sg - SR, 2);
+        q('out').innerHTML = '均值项 (μ_r−μ_g)² = <b>' + meanTerm.toFixed(3) + '</b>　方差项 (σ_r−σ_g)² = <b>' + varTerm.toFixed(3) + '</b>　FID = <b>' + (meanTerm + varTerm).toFixed(3) + '</b><br>'
+            + 'FID 越小越好：要降到 0，既要对齐均值，也要对齐方差。曲线为对应高斯密度示意。';
+    }
+    box.querySelectorAll('input[data-fid], button[data-fid]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'input', function () {
+            if (el.tagName === 'BUTTON') { q('mu').value = 0; q('sg').value = 1; }
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
