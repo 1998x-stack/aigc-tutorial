@@ -12,6 +12,13 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .vae-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #ddd6fe; border-radius: 14px; }
+        .vae-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .vae-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .vae-demo input[type="range"] { width: 180px; max-width: 100%; }
+        .vae-demo output { font-variant-numeric: tabular-nums; color: #4c1d95; }
+        .vae-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .vae-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -136,6 +143,36 @@ GOOD: ε ~ N(0, I)              ← 从标准正态采样（随机性来自外�
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>重参数化技巧的本质是"把随机性从参数中抽离"。这是一个在 PyTorch 中只需要两行代码实现的技巧——但它解决了整个 VAE 训练的关键障碍。2013 年的研究者能想到这个点，是非常了不起的。
         </div>
+
+        <section class="vae-demo" aria-labelledby="vae3-title">
+            <h3 id="vae3-title">交互演示：单维 KL 散度与采样带</h3>
+            <p>调节均值 <code>μ</code> 与标准差 <code>σ</code>，读取重参数化采样 z = μ + σ⊙ε 的分布带，以及它对先验 N(0,1) 的 KL 贡献（按公式 3.2 逐维计算）。数值为公式的直接换算，非实测耗时。</p>
+            <div class="controls">
+                <label>均值 μ
+                    <input type="range" data-vae="mu" min="-3" max="3" step="0.1" value="0">
+                    <output data-vae="muOut">0.0</output>
+                </label>
+                <label>标准差 σ
+                    <input type="range" data-vae="sigma" min="0.1" max="3" step="0.1" value="1">
+                    <output data-vae="sigOut">1.0</output>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 200" role="img" aria-labelledby="vae3-svg-title">
+                <title id="vae3-svg-title">重参数化采样的分布带与单维 KL 贡献示意</title>
+                <line x1="20" y1="70" x2="620" y2="70" stroke="#cbd5e1" stroke-width="1.5"/>
+                <line x1="320" y1="25" x2="320" y2="115" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="5 4"/>
+                <text x="320" y="132" font-size="11" fill="#7c3aed" text-anchor="middle">潜变量 z 轴（虚线为 0）</text>
+                <rect data-vae="band" x="300" y="40" width="40" height="60" rx="8" fill="#ddd6fe"/>
+                <line data-vae="mean" x1="320" y1="35" x2="320" y2="105" stroke="#7c3aed" stroke-width="3"/>
+                <circle data-vae="dot" cx="320" cy="70" r="6" fill="#7c3aed"/>
+                <text data-vae="bandText" x="360" y="48" font-size="12" fill="#5b21b6"></text>
+                <text x="20" y="160" font-size="11" fill="#64748b">单维 KL 贡献（条形长度按 0–8 线性映射）</text>
+                <rect x="20" y="168" width="600" height="18" rx="6" fill="#ede9fe"/>
+                <rect data-vae="klbar" x="20" y="168" width="0" height="18" rx="6" fill="#7c3aed"/>
+                <text data-vae="kltext" x="20" y="199" font-size="12" fill="#5b21b6"></text>
+            </svg>
+            <p class="vae-out" data-vae="out" aria-live="polite"></p>
+        </section>
 
         <p>在 PyTorch 中，VAE 的采样模块实现起来非常简洁：</p>
 
@@ -277,5 +314,39 @@ GOOD: ε ~ N(0, I)              ← 从标准正态采样（随机性来自外�
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.vae-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-vae="' + n + '"]'); };
+    function render() {
+        var mu = parseFloat(q('mu').value), sig = parseFloat(q('sigma').value);
+        var kl = 0.5 * (mu * mu + sig * sig - Math.log(sig * sig) - 1);
+        if (kl < 0) kl = 0;
+        var cx = 320 + mu * 100, half = sig * 100;
+        q('mean').setAttribute('x1', cx); q('mean').setAttribute('x2', cx);
+        q('dot').setAttribute('cx', cx);
+        q('band').setAttribute('x', Math.max(20, cx - half));
+        q('band').setAttribute('width', Math.min(600, 2 * half));
+        q('bandText').setAttribute('x', Math.min(560, cx + half + 8));
+        q('bandText').textContent = 'μ = ' + mu.toFixed(1) + '，±σ = ±' + sig.toFixed(1);
+        var w = Math.max(2, Math.min(600, kl / 8 * 600));
+        q('klbar').setAttribute('width', w.toFixed(1));
+        q('kltext').textContent = '单维 KL = 0.5·(μ² + σ² − ln σ² − 1) = ' + kl.toFixed(2);
+        q('out').innerHTML = '重参数化采样：z = μ + σ⊙ε = <b>' + mu.toFixed(1) + '</b> + <b>' + sig.toFixed(1) + '</b>·ε，其中 ε ~ N(0,1)。'
+            + '样本以 μ 为均值、以 σ 为标准差，落在图中淡紫分布带内。<br>'
+            + '当 μ=0 且 σ=1 时分布与先验 N(0,1) 完全重合，KL = <b>0</b>；σ 偏离 1 或 μ 偏离 0 都会推高 KL 正则项。'
+            + (sig < 0.3 ? ' 注意：σ 很小时潜变量几乎无随机性，重参数化退化为确定性映射。' : '');
+    }
+    box.querySelectorAll('input[data-vae]').forEach(function (el) {
+        el.addEventListener('input', function () {
+            if (el.dataset.vae === 'mu') q('muOut').textContent = parseFloat(el.value).toFixed(1);
+            else q('sigOut').textContent = parseFloat(el.value).toFixed(1);
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
