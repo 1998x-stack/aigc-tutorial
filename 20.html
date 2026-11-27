@@ -12,6 +12,17 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* 整流流轨迹交互演示 */
+        .rf { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .rf h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .rf-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .rf-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .rf-controls input[type="range"], .rf-controls button { font: inherit; max-width: 100%; }
+        .rf-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .rf-controls button:hover { background: #ede9fe; }
+        .rf-chart { width: 100%; height: auto; display: block; background: #fff; border-radius: 10px; }
+        .rf-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        @media print { .rf { break-inside: avoid; } }
     </style>
 
 </head>
@@ -159,6 +170,31 @@
             </div>
         </div>
 
+        <section class="rf" aria-labelledby="rf20-title">
+            <h3 id="rf20-title">交互演示：线性插值路径上的位置与速度</h3>
+            <p>拖动进度 t，读取整流流线性插值路径上的位置 <code>x_t</code> 与速度。定义取自 Rectified Flow：<code>x_t = (1−t)·x_0 + t·x_1</code>，沿路径速度恒为 <code>v = x_1 − x_0</code>。图中弯曲虚线是扩散加噪路径的示意，仅用于对比走向，不是数值。下图为二维坐标示意，公式与数值为解析结果。</p>
+            <div class="rf-controls">
+                <label>进度 t：<output data-rf="tval">0.00</output>
+                    <input type="range" data-rf="t" min="0" max="1" value="0" step="0.01">
+                </label>
+                <button type="button" data-rf="step">前进 +0.1</button>
+            </div>
+            <svg class="rf-chart" viewBox="0 0 640 300" role="img" aria-labelledby="rf20-svg-title">
+                <title id="rf20-svg-title">整流流线性插值路径上不同 t 的位置以及恒定的速度向量</title>
+                <path d="M150 250 C 250 110, 420 250, 520 80" fill="none" stroke="#fca5a5" stroke-width="2" stroke-dasharray="6 5"/>
+                <text x="300" y="150" font-size="12" fill="#dc2626">扩散弯曲路径（教学示意）</text>
+                <line x1="150" y1="250" x2="520" y2="80" stroke="#7c3aed" stroke-width="3"/>
+                <circle cx="150" cy="250" r="7" fill="#0ea5e9"/>
+                <text x="150" y="276" font-size="12" fill="#0369a1" text-anchor="middle">x_0 噪声</text>
+                <circle cx="520" cy="80" r="7" fill="#16a34a"/>
+                <text x="520" y="64" font-size="12" fill="#15803d" text-anchor="middle">x_1 数据</text>
+                <defs><marker id="rf-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#dc2626"/></marker></defs>
+                <line data-rf="vel" x1="150" y1="250" x2="196" y2="237" stroke="#dc2626" stroke-width="2.5" marker-end="url(#rf-arrow)"/>
+                <circle data-rf="dot" cx="150" cy="250" r="8" fill="#7c3aed" stroke="#fff" stroke-width="2"/>
+            </svg>
+            <p class="rf-out" data-rf="out" aria-live="polite"></p>
+        </section>
+
         <div class="tip">
             <strong>💡 直觉理解：</strong>想象你站在位置 x_0（噪声），想去位置 x_1（图像）。线性插值路径就是"从起点直线走到终点"。Rectified Flow 就是训练一个模型，告诉它"无论你当前在哪里、在哪个时间点，你都应该沿着 x_1 - x_0 的方向走"。推理时，模型沿着自己预测的方向一步一步走向 x_1。
         </div>
@@ -262,5 +298,33 @@
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.rf');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-rf="' + n + '"]'); };
+    var A = [150, 250], B = [520, 80];
+    var vx = B[0] - A[0], vy = B[1] - A[1];
+    var len = Math.hypot(vx, vy), ux = vx / len, uy = vy / len, L = 46;
+    function render() {
+        var t = Math.min(1, Math.max(0, parseFloat(q('t').value) || 0));
+        q('tval').textContent = t.toFixed(2);
+        var x = A[0] + t * vx, y = A[1] + t * vy;
+        q('dot').setAttribute('cx', x.toFixed(1));
+        q('dot').setAttribute('cy', y.toFixed(1));
+        q('vel').setAttribute('x1', x.toFixed(1)); q('vel').setAttribute('y1', y.toFixed(1));
+        q('vel').setAttribute('x2', (x + ux * L).toFixed(1)); q('vel').setAttribute('y2', (y + uy * L).toFixed(1));
+        q('out').innerHTML = 't = <b>' + t.toFixed(2) + '</b>　x_t = (1−t)·x_0 + t·x_1 = <b>(' + x.toFixed(1) + ', ' + y.toFixed(1) + ')</b><br>'
+            + '速度 v = x_1 − x_0 = <b>(' + vx + ', ' + vy + ')</b>，与 t 无关：轨迹为直线，沿该速度走完需一个单位时间。';
+    }
+    box.querySelectorAll('input[data-rf], button[data-rf]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'input', function () {
+            if (el.tagName === 'BUTTON') q('t').value = Math.min(1, (parseFloat(q('t').value) || 0) + 0.1).toFixed(2);
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
