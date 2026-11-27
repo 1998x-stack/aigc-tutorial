@@ -12,6 +12,17 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* CLIP InfoNCE 交互演示 */
+        .clip { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .clip h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .clip-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .clip-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .clip-controls input[type="range"], .clip-controls button { font: inherit; max-width: 100%; }
+        .clip-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .clip-controls button:hover { background: #ede9fe; }
+        .clip-chart { width: 100%; height: auto; display: block; background: #fff; border-radius: 10px; }
+        .clip-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        @media print { .clip { break-inside: avoid; } }
     </style>
 
 </head>
@@ -156,6 +167,23 @@ loss = (loss_i + loss_t) / 2</code></pre>
 
         <p>这里有一个重要的超参数——<strong>温度系数</strong>（temperature，通常记作 τ 或 t）。它的作用是控制 softmax 分布的"尖锐程度"：τ 越小，softmax 输出分布越集中在最高分上，模型对负样本的惩罚越强；τ 越大，分布越平滑，梯度越温和。CLIP 论文发现 τ 对最终性能影响很大，最终选择让 τ 作为一个可学习的参数。</p>
 
+        <section class="clip" aria-labelledby="clip15-title">
+            <h3 id="clip15-title">交互演示：温度 τ 如何改变 InfoNCE 的分布</h3>
+            <p>给定一个图像与 4 个文本的余弦相似度（示例值），调整温度 τ，观察 softmax 概率与单方向 InfoNCE 损失 <code>L = −log p_正</code> 的变化。概率按 <code>p_j = exp(s_j/τ) / Σ_k exp(s_k/τ)</code> 计算。相似度为教学示例值，非实测；τ 的典型初值取 CLIP 论文的 0.07 量级。</p>
+            <div class="clip-controls">
+                <label>温度 τ：<output data-clip="tval">0.07</output>
+                    <input type="range" data-clip="tau" min="0.01" max="1" value="0.07" step="0.01">
+                </label>
+                <button type="button" data-clip="next">下一个示例</button>
+            </div>
+            <svg class="clip-chart" viewBox="0 0 640 240" role="img" aria-labelledby="clip15-svg-title">
+                <title id="clip15-svg-title">不同温度下 4 个候选文本的 softmax 概率分布柱</title>
+                <line x1="50" y1="200" x2="600" y2="200" stroke="#94a3b8" stroke-width="1.5"/>
+                <g data-clip="bars"></g>
+            </svg>
+            <p class="clip-out" data-clip="out" aria-live="polite"></p>
+        </section>
+
         <div class="tip">
             <strong>💡 直觉理解：</strong>可以想象你在一个派对上找人。正样本就是你认识的人（我们要找到他），负样本是满屋子不认识的人。InfoNCE 损失相当于说："在满屋子的人里面，你要能一眼认出你朋友。"温度系数 τ 则控制着"多难才算难"——τ 很小的时候，所有不认识的人都像是差不多的干扰项；τ 很大时，干扰项之间的差异也被考虑了。
         </div>
@@ -228,5 +256,43 @@ loss = (loss_i + loss_t) / 2</code></pre>
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.clip');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-clip="' + n + '"]'); };
+    var PRESETS = [
+        { name: '清晰正样本', s: [0.90, 0.50, 0.40, 0.30] },
+        { name: '正负难分', s: [0.50, 0.48, 0.45, 0.40] },
+        { name: '正样本突出', s: [0.95, 0.20, 0.15, 0.10] }
+    ];
+    var idx = 0;
+    function render() {
+        var tau = Math.max(0.01, parseFloat(q('tau').value) || 0.07);
+        q('tval').textContent = tau.toFixed(2);
+        var s = PRESETS[idx].s;
+        var ex = s.map(function (v) { return Math.exp(v / tau); });
+        var sum = ex.reduce(function (a, b) { return a + b; }, 0);
+        var p = ex.map(function (v) { return v / sum; });
+        var x0 = 70, gap = 130, bw = 80, base = 200, maxH = 170, parts = [];
+        p.forEach(function (v, i) {
+            var h = Math.max(2, v * maxH), x = x0 + i * gap;
+            parts.push('<rect x="' + x + '" y="' + (base - h).toFixed(1) + '" width="' + bw + '" height="' + h.toFixed(1) + '" rx="6" fill="' + (i === 0 ? '#7c3aed' : '#c4b5fd') + '"/>');
+            parts.push('<text x="' + (x + bw / 2) + '" y="216" font-size="12" fill="#475569" text-anchor="middle">' + (i === 0 ? '正样本' : '负样本' + i) + '</text>');
+        });
+        q('bars').innerHTML = parts.join('');
+        q('out').innerHTML = '示例：<b>' + PRESETS[idx].name + '</b>　τ = <b>' + tau.toFixed(2) + '</b><br>'
+            + 'p_正 = <b>' + p[0].toFixed(3) + '</b>　InfoNCE 损失 −log p_正 = <b>' + (-Math.log(p[0])).toFixed(3) + '</b><br>'
+            + 'τ 越小，softmax 越尖锐，正样本概率越接近 1、损失越小；τ 越大分布越平滑，对负样本的判别压力越小。';
+    }
+    box.querySelectorAll('input[data-clip], button[data-clip]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'input', function () {
+            if (el.tagName === 'BUTTON') idx = (idx + 1) % PRESETS.length;
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
