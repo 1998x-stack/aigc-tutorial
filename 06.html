@@ -12,6 +12,12 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .mask-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #bbf7d0; border-radius: 14px; }
+        .mask-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .mask-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #14532d; }
+        .mask-demo select { font: inherit; max-width: 100%; }
+        .mask-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .mask-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #dcfce7; border-left: 5px solid #16a34a; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -149,6 +155,28 @@ Mask B（后续层用）：
 在 attention 中，将上三角的注意力分数设为 -∞（softmax 后变为 0），
 确保每个 token 只能 attend 到之前（包括自己）的 token。</code></pre>
 
+        <section class="mask-demo" aria-labelledby="mask6-title">
+            <h3 id="mask6-title">交互演示：因果掩码矩阵</h3>
+            <p>选择序列长度 N，观察 Transformer 解码器的因果掩码：第 i 行（token_i）只能 attend 到第 1…i 列（含自身），上三角被置为 −∞（softmax 后为 0）。绿色为可见、灰色为被屏蔽。数值为公式换算，非实测。</p>
+            <div class="controls">
+                <label>序列长度 N
+                    <select data-mask="n">
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                        <option value="8" selected>8</option>
+                        <option value="12">12</option>
+                        <option value="16">16</option>
+                    </select>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 300" role="img" aria-labelledby="mask6-svg-title">
+                <title id="mask6-svg-title">序列长度为 N 的因果掩码网格（下三角可见、上三角屏蔽）</title>
+                <g data-mask="grid"></g>
+                <text data-mask="info" x="30" y="292" font-size="12" fill="#14532d"></text>
+            </svg>
+            <p class="mask-out" data-mask="out" aria-live="polite"></p>
+        </section>
+
         <p>Transformer 相比 PixelCNN 的核心优势在于：</p>
         <ul>
             <li><strong>长距离依赖建模</strong>：自注意力可以捕获图像中任意两个像素之间的关系（卷积只能看到局部）</li>
@@ -231,5 +259,37 @@ Mask B（后续层用）：
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.mask-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-mask="' + n + '"]'); };
+    var NS = 'http://www.w3.org/2000/svg';
+    function render() {
+        var N = parseInt(q('n').value, 10);
+        var cell = Math.min(30, 300 / N), x0 = 30, y0 = 20;
+        var grid = q('grid');
+        while (grid.firstChild) grid.removeChild(grid.firstChild);
+        for (var r = 0; r < N; r++) {
+            for (var c = 0; c < N; c++) {
+                var rect = document.createElementNS(NS, 'rect');
+                rect.setAttribute('x', (x0 + c * cell).toFixed(1));
+                rect.setAttribute('y', (y0 + r * cell).toFixed(1));
+                rect.setAttribute('width', (cell - 1.5).toFixed(1));
+                rect.setAttribute('height', (cell - 1.5).toFixed(1));
+                rect.setAttribute('rx', '2');
+                rect.setAttribute('fill', c <= r ? '#86efac' : '#e2e8f0');
+                grid.appendChild(rect);
+            }
+        }
+        var visible = N * (N + 1) / 2, total = N * N;
+        q('info').textContent = '可见 ' + visible + ' / ' + total + ' 个位置（约 ' + (visible / total * 100).toFixed(0) + '%）';
+        q('out').innerHTML = 'N = <b>' + N + '</b>：注意力矩阵共 N² = <b>' + total + '</b> 个位置，因果掩码允许 N(N+1)/2 = <b>' + visible + '</b> 个（下三角含对角线），其余 <b>' + (total - visible) + '</b> 个被屏蔽。<br>'
+            + '可见比例 = (N+1)/(2N) ≈ <b>' + (visible / total * 100).toFixed(0) + '%</b>。掩码保证了位置 i 只能看到 ≤ i 的 token，这正是自回归“逐个生成”得以并行训练（teacher forcing）的关键。';
+    }
+    q('n').addEventListener('change', render);
+    render();
+})();
+</script>
 </body>
 </html>
