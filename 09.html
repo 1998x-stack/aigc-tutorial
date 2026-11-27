@@ -12,6 +12,12 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .ddim-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #ddd6fe; border-radius: 14px; }
+        .ddim-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .ddim-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .ddim-demo select { font: inherit; max-width: 100%; }
+        .ddim-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .ddim-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -111,6 +117,35 @@
         <div class="highlight">
             <strong>🌟 核心洞察：</strong>DDIM 告诉我们，扩散模型的 Markov 链假设并不是必需的。只要保持前向过程的边缘分布 q(x_t|x₀) 不变，我们可以自由设计反向过程的采样轨迹。这类似于用不同的 ODE 求解器解同一个方程——殊途同归，但效率和性质截然不同。
         </div>
+
+        <section class="ddim-demo" aria-labelledby="ddim9-title">
+            <h3 id="ddim9-title">交互演示：DDIM 的步数跳采样</h3>
+            <p>DDIM 打破了 Markov 链，可以在 1000 步的逆向过程中<strong>只有选择 N 个时间步</strong>来“跳着走”。选择 N，观察被访问的时间步在时间轴上的分布，以及相对计算量。步数与生成质量的趋势见下方表格（文献报告值）；此处仅演示时间步采样与相对开销的几何关系，非实测耗图。</p>
+            <div class="controls">
+                <label>采样步数 N
+                    <select data-ddim="n">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                        <option value="1000">1000</option>
+                    </select>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 150" role="img" aria-labelledby="ddim9-svg-title">
+                <title id="ddim9-svg-title">DDIM 在 1000 步时间轴上被访问的时间步与相对计算量</title>
+                <line x1="30" y1="70" x2="610" y2="70" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text x="30" y="90" font-size="11" fill="#64748b">x_T（t=1000）</text>
+                <text x="560" y="90" font-size="11" fill="#64748b">x_0（t=0）</text>
+                <g data-ddim="ticks" stroke="#7c3aed" stroke-width="2"></g>
+                <text x="30" y="125" font-size="11" fill="#64748b">相对计算量（N / 1000）</text>
+                <rect x="240" y="114" width="340" height="16" rx="5" fill="#ede9fe"/>
+                <rect data-ddim="bar" x="240" y="114" width="0" height="16" rx="5" fill="#7c3aed"/>
+                <text data-ddim="barText" x="590" y="126" font-size="11" fill="#5b21b6"></text>
+            </svg>
+            <p class="ddim-out" data-ddim="out" aria-live="polite"></p>
+        </section>
 
         <p>DDIM 的采样步数与质量的关系：</p>
 
@@ -232,5 +267,33 @@
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.ddim-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-ddim="' + n + '"]'); };
+    function render() {
+        var N = parseInt(q('n').value, 10), T = 1000, stride = T / N;
+        var ns = 'http://www.w3.org/2000/svg', ticks = q('ticks');
+        while (ticks.firstChild) ticks.removeChild(ticks.firstChild);
+        for (var i = 0; i < N; i++) {
+            var t = T - i * stride, x = 30 + (T - t) / T * 580;
+            var ln = document.createElementNS(ns, 'line');
+            ln.setAttribute('x1', x.toFixed(1)); ln.setAttribute('x2', x.toFixed(1));
+            ln.setAttribute('y1', '62'); ln.setAttribute('y2', '78');
+            if (N > 200) ln.setAttribute('stroke-width', '1');
+            ticks.appendChild(ln);
+        }
+        q('bar').setAttribute('width', (N / T * 340).toFixed(1));
+        q('barText').textContent = (N / T * 100).toFixed(1) + '%';
+        q('out').innerHTML = 'N = <b>' + N + '</b> 步，跳步间隔 stride = 1000 / N = <b>' + stride + '</b>。'
+            + '即每个被访问步直接“跨过” ' + stride + ' 个时间步，而 DDPM 必须逐步走完 1000 步。<br>'
+            + '相对计算量约为 <b>' + (N / T * 100).toFixed(1) + '%</b>（前向次数与 N 近似成正比；'
+            + '按照上方表格的文献报告趋势，N 降到 10 附近时质量（FID）会明显下降，因此实际使用多在 20–100 步。）';
+    }
+    q('n').addEventListener('change', render);
+    render();
+})();
+</script>
 </body>
 </html>
