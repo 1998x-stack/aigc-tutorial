@@ -12,6 +12,16 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* 视频时空 token 交互演示 */
+        .vid { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .vid h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .vid-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .vid-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .vid-controls select, .vid-controls button { font: inherit; max-width: 100%; }
+        .vid-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .vid-controls button:hover { background: #ede9fe; }
+        .vid-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        @media print { .vid { break-inside: avoid; } }
     </style>
 
 </head>
@@ -114,6 +124,30 @@ class SpacetimePatchEmbed(nn.Module):
         return x</code></pre>
 
         <p>这个设计的精妙之处在于：通过 patch 化，Sora 可以处理任意时长、任意分辨率、任意宽高比的视频——只需要调整 patch 数量即可。这也让 Sora 具备了"原生"的多分辨率泛化能力。</p>
+
+        <section class="vid" aria-labelledby="vid22-title">
+            <h3 id="vid22-title">交互演示：视频 token 数随时长与 patch 增长</h3>
+            <p>视频的 token 在时间维度上还会继续膨胀。按 30fps、1024×1024、空间降采样 8、时间降采样 4 的潜空间换算（常见 3D VAE 取法，此处为教学示意），token 数 <code>N = (⌈F/4⌉/t_p)·(128/h_p)·(128/w_p)</code>，自注意力开销随 N 近似平方增长。</p>
+            <div class="vid-controls">
+                <label>时长
+                    <select data-vid="dur">
+                        <option value="2">2 秒</option>
+                        <option value="4" selected>4 秒</option>
+                        <option value="8">8 秒</option>
+                        <option value="16">16 秒</option>
+                    </select>
+                </label>
+                <label>时空 patch (t_p, h_p, w_p)
+                    <select data-vid="patch">
+                        <option value="1,2,2" selected>(1, 2, 2)</option>
+                        <option value="2,2,2">(2, 2, 2)</option>
+                        <option value="1,4,4">(1, 4, 4)</option>
+                    </select>
+                </label>
+                <button type="button" data-vid="next">下一个 patch 方案</button>
+            </div>
+            <p class="vid-out" data-vid="out" aria-live="polite"></p>
+        </section>
 
         <div class="highlight">
             <strong>🌟 Sora 的"遗产"：</strong>虽然 OpenAI 在 2025 年关停了 Sora 的独立服务（将其能力并入 GPT 生态和 Sora 2 代中），但 Sora 的技术范式——DiT + 时空 patch + 视频压缩网络——已经成为了整个视频生成领域的事实标准。几乎所有后续出现的视频模型都在沿用这个范式。
@@ -230,5 +264,37 @@ class SpacetimePatchEmbed(nn.Module):
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.vid');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-vid="' + n + '"]'); };
+    function tok(dur, p) {
+        var T = Math.ceil(dur * 30 / 4), HW = 128;
+        return Math.ceil(T / p[0]) * Math.ceil(HW / p[1]) * Math.ceil(HW / p[2]);
+    }
+    var BASE = tok(4, [1, 2, 2]);
+    function fmt(n) { return n.toLocaleString('en-US'); }
+    function render() {
+        var dur = parseFloat(q('dur').value);
+        var p = q('patch').value.split(',').map(Number);
+        var N = tok(dur, p);
+        q('out').innerHTML = dur + ' 秒 @30fps → ' + (dur * 30) + ' 帧，潜空间 ' + Math.ceil(dur * 30 / 4) + '×128×128；patch (' + p.join(', ') + ')'
+            + '　→　token 数 N = <b>' + fmt(N) + '</b><br>'
+            + '相比 4 秒、(1,2,2) 的基准（N = ' + fmt(BASE) + '）：N 约为 <b>' + (N / BASE).toFixed(2) + '×</b>，'
+            + '自注意力开销约为 <b>' + Math.pow(N / BASE, 2).toFixed(2) + '×</b>。时长与 patch 是控制视频 token 数的两个关键旋钮。';
+    }
+    box.querySelectorAll('select[data-vid], button[data-vid]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'change', function () {
+            if (el.tagName === 'BUTTON') {
+                var opts = ['1,2,2', '2,2,2', '1,4,4'], i = opts.indexOf(q('patch').value);
+                q('patch').value = opts[(i + 1) % opts.length];
+            }
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
