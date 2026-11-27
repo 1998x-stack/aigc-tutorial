@@ -12,6 +12,12 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .mem-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #fde68a; border-radius: 14px; }
+        .mem-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .mem-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #713f12; }
+        .mem-demo select { font: inherit; max-width: 100%; }
+        .mem-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .mem-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #fef9c3; border-left: 5px solid #d97706; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -136,6 +142,35 @@ torch.onnx.export(
             <tr><td>VAE 分块解码（tiling）</td><td>大幅降低显存峰值</td><td>低（参数开关）</td><td>大图生成</td></tr>
             <tr><td>连续批处理（vLLM）</td><td>吞吐量 3-10x</td><td>高（需框架支持）</td><td>LLM + 扩散混合场景</td></tr>
         </table></div>
+
+        <section class="mem-demo" aria-labelledby="mem25-title">
+            <h3 id="mem25-title">交互演示：模型权重的显存占用</h3>
+            <p>模型权重的显存 ≈ 参数量 × 每参数字节数。选择模型与精度，观察权重显存的变化，对应上表 FP16（-50%）、INT8（-75%）的显存收益。此处只计权重，不含激活值、优化器状态与中间缓存。数值为公式换算，非实测。</p>
+            <div class="controls">
+                <label>模型（参数量）
+                    <select data-mem="model">
+                        <option value="0.86">SD 1.5 U-Net（860M）</option>
+                        <option value="2.6" selected>SDXL U-Net（2.6B）</option>
+                        <option value="8">SD 3 级 MM-DiT（8B）</option>
+                    </select>
+                </label>
+                <label>精度
+                    <select data-mem="prec">
+                        <option value="4">FP32（4 字节）</option>
+                        <option value="2" selected>FP16（2 字节）</option>
+                        <option value="1">INT8（1 字节）</option>
+                    </select>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 110" role="img" aria-labelledby="mem25-svg-title">
+                <title id="mem25-svg-title">不同精度下模型权重的显存占用条</title>
+                <text x="30" y="26" font-size="11" fill="#64748b">权重显存（相对 FP32 基准，0–32 GB）</text>
+                <rect x="30" y="38" width="560" height="20" rx="6" fill="#fef9c3"/>
+                <rect data-mem="bar" x="30" y="38" width="0" height="20" rx="6" fill="#d97706"/>
+                <text data-mem="barText" x="30" y="80" font-size="12" fill="#713f12"></text>
+            </svg>
+            <p class="mem-out" data-mem="out" aria-live="polite"></p>
+        </section>
 
         <p>其中 <strong>Torch Compile</strong> 是 2024 年 PyTorch 2.x 引入的重磅特性。它在第一次推理时编译计算图，后续调用跳过 Python 解释器直接执行编译后的内核。在 SDXL 的 U-Net 上，它通常能带来可观的推理时间下降（官方基准中常见两成以上），且几乎零侵入，一行代码：</p>
 
@@ -333,5 +368,25 @@ async def process_queue(q: asyncio.Queue):
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.mem-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-mem="' + n + '"]'); };
+    var NAME = { 1: 'INT8', 2: 'FP16', 4: 'FP32' };
+    function render() {
+        var p = parseFloat(q('model').value), b = parseInt(q('prec').value, 10);
+        var gb = p * b, base = p * 4;
+        q('bar').setAttribute('width', Math.min(560, gb / 32 * 560).toFixed(1));
+        q('barText').textContent = '权重显存 ≈ ' + p + 'B 参数 × ' + b + ' 字节 = ' + gb.toFixed(2) + ' GB（FP32 基准的 ' + (gb / base * 100).toFixed(0) + '%）';
+        q('out').innerHTML = '参数量 <b>' + p + 'B</b>，精度 <b>' + NAME[b] + '</b>：权重显存 ≈ <b>' + gb.toFixed(2) + ' GB</b>。<br>'
+            + '相对 FP32（' + base.toFixed(2) + ' GB）而言，FP16 降为一半、INT8 降为四分之一，与上表“-50% / -75% 显存”一致。'
+            + '注意：这是权重本身的占用；推理时还会叠加激活值、中间特征图与注意力缓存，峰值显存通常高于此值。';
+    }
+    q('model').addEventListener('change', render);
+    q('prec').addEventListener('change', render);
+    render();
+})();
+</script>
 </body>
 </html>
