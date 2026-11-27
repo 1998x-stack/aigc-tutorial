@@ -12,6 +12,16 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* AdaLN-Zero 调制交互演示 */
+        .adaln { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .adaln h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .adaln-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .adaln-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .adaln-controls input[type="range"], .adaln-controls button { font: inherit; max-width: 100%; }
+        .adaln-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .adaln-controls button:hover { background: #ede9fe; }
+        .adaln-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        @media print { .adaln { break-inside: avoid; } }
     </style>
 
 </head>
@@ -176,6 +186,24 @@ def adaLn_zero_block(x, c):
 
         <p>关键在 <strong>gate 初始化为 0</strong> 这个设计。当训练开始时，gate=0 意味着残差分支的输出被完全阻塞，整个模型退化为一个恒等映射加上 MLP——这保证了训练的稳定起步。随着训练的进行，gate 逐渐增大，条件信息逐步"流入"主干网络。</p>
 
+        <section class="adaln" aria-labelledby="adaln16-title">
+            <h3 id="adaln16-title">交互演示：scale / shift / gate 如何改变一个 block 的输出</h3>
+            <p>取一个固定的三元素特征 <code>x</code> 与固定的注意力输出 <code>a</code>（教学示例值），拖动 scale、shift、gate，按 <code>x_norm = (1+scale)·LayerNorm(x) + shift</code>、<code>x′ = x + gate·a</code> 计算。把三者归零即可看到 AdaLN-Zero 的“零初始化使 block 退化为恒等映射”。</p>
+            <div class="adaln-controls">
+                <label>scale：<output data-adaln="scaleval">1.00</output>
+                    <input type="range" data-adaln="scale" min="-1" max="1" value="1" step="0.1">
+                </label>
+                <label>shift：<output data-adaln="shiftval">0.50</output>
+                    <input type="range" data-adaln="shift" min="-1" max="1" value="0.5" step="0.1">
+                </label>
+                <label>gate：<output data-adaln="gateval">1.00</output>
+                    <input type="range" data-adaln="gate" min="0" max="2" value="1" step="0.1">
+                </label>
+                <button type="button" data-adaln="zero">设为零初始化</button>
+            </div>
+            <p class="adaln-out" data-adaln="out" aria-live="polite"></p>
+        </section>
+
         <div class="highlight">
             <strong>🌟 设计哲学对比：</strong>Cross-Attention 是"外部注入"——文本信息作为独立的 K/V 进入模型；AdaLN-Zero 是"内部调制"——条件信息通过调控 LN 参数来微调特征计算。前者更适合稠密的 token 级别控制（文本描述），后者更适合稀疏的条件控制（类别标签、timestep）。DiT 之所以选择 AdaLN-Zero 而非 Cross-Attention，是因为 DiT 作为 Transformer，每个 patch token 已经包含了丰富的空间信息，条件信号只需要做"全局调制"而无需逐 token 注入。
         </div>
@@ -262,5 +290,36 @@ def adaLn_zero_block(x, c):
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.adaln');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-adaln="' + n + '"]'); };
+    var X = [1.0, 2.0, 4.0], A = [0.5, -0.5, 1.0];
+    function fmt(arr) { return '(' + arr.map(function (v) { return v.toFixed(2); }).join(', ') + ')'; }
+    function render() {
+        var sc = parseFloat(q('scale').value), sh = parseFloat(q('shift').value), ga = parseFloat(q('gate').value);
+        q('scaleval').textContent = sc.toFixed(2);
+        q('shiftval').textContent = sh.toFixed(2);
+        q('gateval').textContent = ga.toFixed(2);
+        var mean = X.reduce(function (a, b) { return a + b; }, 0) / X.length;
+        var varr = X.reduce(function (a, b) { return a + Math.pow(b - mean, 2); }, 0) / X.length;
+        var std = Math.sqrt(varr + 1e-5);
+        var ln = X.map(function (v) { return (v - mean) / std; });
+        var xn = ln.map(function (v) { return (1 + sc) * v + sh; });
+        var out = X.map(function (v, i) { return v + ga * A[i]; });
+        q('out').innerHTML = 'x = ' + fmt(X) + '，a = ' + fmt(A) + '　LayerNorm(x) = ' + fmt(ln) + '<br>'
+            + 'x_norm = <b>' + fmt(xn) + '</b>　x′ = x + gate·a = <b>' + fmt(out) + '</b>'
+            + (ga === 0 ? '　→ gate=0 时 x′ = x，block 退化为恒等映射。' : '　→ gate 越大，注意力分支对输出的影响越强。');
+    }
+    box.querySelectorAll('input[data-adaln], button[data-adaln]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'input', function () {
+            if (el.tagName === 'BUTTON') { q('scale').value = 0; q('shift').value = 0; q('gate').value = 0; }
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
