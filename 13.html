@@ -12,6 +12,17 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* DiT patchify 交互演示 */
+        .dit { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .dit h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .dit-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .dit-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .dit-controls select, .dit-controls button { font: inherit; max-width: 100%; }
+        .dit-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .dit-controls button:hover { background: #ede9fe; }
+        .dit-chart { width: 100%; height: auto; display: block; background: #fff; border-radius: 10px; }
+        .dit-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        @media print { .dit { break-inside: avoid; } }
     </style>
 
 </head>
@@ -119,6 +130,37 @@ x = x + pos_embedding[:, :N, :]        # 加位置编码</code></pre>
         </table></div>
 
         <p>标准的 DiT 通常使用 patch_size=2 以保留空间细节，同时在计算开销和生成质量之间取得平衡。</p>
+
+        <section class="dit" aria-labelledby="dit13-title">
+            <h3 id="dit13-title">交互演示：patch 尺寸与 token 数量</h3>
+            <p>选择潜空间分辨率 H×W 与 patch size p，读取 token 数 <code>N = (H/p)·(W/p)</code> 与自注意力的相对开销。自注意力计算量随 token 数近似平方增长，下图以 64×64、p=2（N=1024）为基准。数值为按公式的直接换算，非实测耗时。</p>
+            <div class="dit-controls">
+                <label>潜空间分辨率
+                    <select data-dit="res">
+                        <option value="32">32×32（DiT-XL 常用）</option>
+                        <option value="64" selected>64×64</option>
+                        <option value="128">128×128</option>
+                    </select>
+                </label>
+                <label>patch size p
+                    <select data-dit="p">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="4">4</option>
+                        <option value="8">8</option>
+                    </select>
+                </label>
+                <button type="button" data-dit="res2">分辨率 ×2</button>
+            </div>
+            <svg class="dit-chart" viewBox="0 0 640 140" role="img" aria-labelledby="dit13-svg-title">
+                <title id="dit13-svg-title">自注意力相对开销随 token 数量平方增长的示意条</title>
+                <rect data-dit="bar" x="20" y="60" width="120" height="30" rx="6" fill="#7c3aed"/>
+                <text data-dit="barText" x="148" y="80" font-size="12" fill="#5b21b6"></text>
+                <line x1="20" y1="110" x2="620" y2="110" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text x="20" y="132" font-size="12" fill="#64748b">相对自注意力开销（= (N/N_基准)²）</text>
+            </svg>
+            <p class="dit-out" data-dit="out" aria-live="polite"></p>
+        </section>
 
         <h2>13.3 DiT Block 设计：AdaLN 与条件注入</h2>
 
@@ -251,5 +293,36 @@ def mm_dit_block(img_tokens, txt_tokens, t_emb):
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.dit');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-dit="' + n + '"]'); };
+    var BASE = 1024;
+    function render() {
+        var H = parseInt(q('res').value, 10), p = parseInt(q('p').value, 10);
+        var n = H / p, N = n * n;
+        var ratio = Math.pow(N / BASE, 2);
+        var w = Math.max(6, Math.min(600, ratio * 120));
+        q('bar').setAttribute('width', w.toFixed(1));
+        q('barText').setAttribute('x', (20 + w + 8).toFixed(1));
+        q('barText').textContent = ratio.toFixed(2) + '× 基准';
+        q('out').innerHTML = 'H = W = ' + H + '，p = ' + p + '　→　token 数 N = (H/p)² = <b>' + N + '</b>'
+            + '　每 token 展平维度 p²·C = <b>' + (p * p * 4) + '</b>（C=4，SD VAE 潜空间通道数）<br>'
+            + '相对自注意力开销 = (N/1024)² ≈ <b>' + ratio.toFixed(2) + '×</b>。'
+            + (ratio > 1 ? ' token 增多会以平方级别放大注意力开销。' : ' patch 越大 token 越少、开销越低，但空间细节损失越多。');
+    }
+    box.querySelectorAll('select[data-dit], button[data-dit]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'change', function () {
+            if (el.tagName === 'BUTTON') {
+                var order = ['32', '64', '128'], i = order.indexOf(q('res').value);
+                q('res').value = order[(i + 1) % order.length];
+            }
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
