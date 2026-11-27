@@ -12,6 +12,14 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        .gan-demo { margin: 18px 0; padding: 16px 18px; background: #fff; border: 1px solid #fecaca; border-radius: 14px; }
+        .gan-demo .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .gan-demo label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #7f1d1d; }
+        .gan-demo input[type="range"] { width: 190px; max-width: 100%; }
+        .gan-demo output { font-variant-numeric: tabular-nums; color: #7f1d1d; }
+        .gan-demo svg { width: 100%; height: auto; display: block; margin-top: 10px; }
+        .gan-line { fill: none; stroke-width: 2.5; }
+        .gan-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #fee2e2; border-left: 5px solid #d06d4d; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
     </style>
 
 </head>
@@ -212,6 +220,35 @@
             <strong>🌟 核心洞察：</strong>这个证明将 GAN 的对抗训练与第 2 章的概率理论完美连接——GAN 的 minimax 博弈最终等价于最小化 JS 散度。但 JS 散度在高维空间中有一个致命问题：当两个分布没有重叠时，JS 散度为常数 log 2，梯度为零——这就是 GAN 训练困难的理论根源。
         </div>
 
+        <section class="gan-demo" aria-labelledby="gan4-title">
+            <h3 id="gan4-title">交互演示：两分布的重叠与 JS 散度</h3>
+            <p>固定真实分布 P_data = N(0,1)，调节生成分布 P_g = N(μ, σ)。在下图的重叠区域上数值计算 JS 散度（自然对数，单位 nat），观察 4.4 节的结论：当两者不重叠时 JS 趋于常数 ln2 ≈ 0.693、梯度消失。数值为公式的数值积分换算，非实测训练结果。</p>
+            <div class="controls">
+                <label>生成分布均值 μ
+                    <input type="range" data-gan="mu" min="0" max="8" step="0.1" value="0">
+                    <output data-gan="muOut">0.0</output>
+                </label>
+                <label>生成分布标准差 σ
+                    <input type="range" data-gan="sigma" min="0.3" max="2.5" step="0.1" value="1">
+                    <output data-gan="sigOut">1.0</output>
+                </label>
+            </div>
+            <svg viewBox="0 0 640 220" role="img" aria-labelledby="gan4-svg-title">
+                <title id="gan4-svg-title">真实分布与生成分布的重叠曲线及 JS 散度条</title>
+                <line x1="30" y1="170" x2="610" y2="170" stroke="#cbd5e1" stroke-width="1.5"/>
+                <line x1="30" y1="20" x2="30" y2="170" stroke="#cbd5e1" stroke-width="1.5"/>
+                <path data-gan="pdata" class="gan-line" stroke="#2563eb"/>
+                <path data-gan="pg" class="gan-line" stroke="#d06d4d"/>
+                <text x="30" y="188" font-size="11" fill="#2563eb">— P_data = N(0,1)</text>
+                <text x="170" y="188" font-size="11" fill="#d06d4d">— P_g = N(μ,σ)</text>
+                <text x="30" y="206" font-size="11" fill="#64748b">JS 散度（0–ln2）</text>
+                <rect x="160" y="196" width="400" height="14" rx="5" fill="#fee2e2"/>
+                <rect data-gan="jsbar" x="160" y="196" width="0" height="14" rx="5" fill="#d06d4d"/>
+                <text data-gan="jstext" x="566" y="207" font-size="11" fill="#7f1d1d"></text>
+            </svg>
+            <p class="gan-out" data-gan="out" aria-live="polite"></p>
+        </section>
+
         <h2>4.5 GAN 训练的核心痛点</h2>
 
         <p>如果你真的训练过 GAN，你一定会对其"任性"印象深刻。以下是 GAN 训练中最经典的三个问题：</p>
@@ -264,5 +301,42 @@
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.gan-demo');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-gan="' + n + '"]'); };
+    var X0 = -8, X1 = 14, YMAX = 1.0, PX0 = 30, PX1 = 610, PY0 = 170, PY1 = 20;
+    var pxc = function (x) { return PX0 + (x - X0) / (X1 - X0) * (PX1 - PX0); };
+    var pyc = function (y) { return PY0 - Math.min(y, YMAX) / YMAX * (PY0 - PY1); };
+    var pdf = function (x, m, s) { return Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * Math.sqrt(2 * Math.PI)); };
+    function render() {
+        var mu = parseFloat(q('mu').value), sig = parseFloat(q('sigma').value);
+        var n = 160, dx = (X1 - X0) / n, js = 0, ep = 1e-9, dp = '', dg = '';
+        for (var i = 0; i <= n; i++) {
+            var x = X0 + i * dx;
+            var p = pdf(x, 0, 1), g = pdf(x, mu, sig), m = (p + g) / 2;
+            js += 0.5 * (p * Math.log((p + ep) / (m + ep)) + g * Math.log((g + ep) / (m + ep))) * dx;
+            dp += (i ? 'L' : 'M') + pxc(x).toFixed(1) + ' ' + pyc(p).toFixed(1) + ' ';
+            dg += (i ? 'L' : 'M') + pxc(x).toFixed(1) + ' ' + pyc(g).toFixed(1) + ' ';
+        }
+        q('pdata').setAttribute('d', dp); q('pg').setAttribute('d', dg);
+        q('jsbar').setAttribute('width', Math.min(400, js / Math.LN2 * 400).toFixed(1));
+        q('jstext').textContent = js.toFixed(3) + ' / ' + Math.LN2.toFixed(3);
+        q('out').innerHTML = 'JS(P_data ‖ P_g) ≈ <b>' + js.toFixed(4) + '</b> nat（上限 ln2 ≈ 0.693）。'
+            + (js > 0.68 ? ' 两分布几乎不重叠，JS 趋于饱和常数、梯度接近 0——这正是 GAN 梯度消失的理论根源。'
+                         : ' 存在重叠区域时 JS 随 μ / σ 变化，梯度可用。') + '<br>'
+            + '最优判别器 D*(x) = P_data(x) / (P_data(x) + P_g(x)) 在重叠处给出中间概率；当 μ=0、σ=1 时两分布重合，JS = 0，D* ≡ 0.5。';
+    }
+    box.querySelectorAll('input[data-gan]').forEach(function (el) {
+        el.addEventListener('input', function () {
+            if (el.dataset.gan === 'mu') q('muOut').textContent = parseFloat(el.value).toFixed(1);
+            else q('sigOut').textContent = parseFloat(el.value).toFixed(1);
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
