@@ -12,6 +12,18 @@
         .math-equation { max-width: 100%; min-width: 0; }
         table { max-width: 100%; }
         body { overflow-wrap: break-word; }
+        /* 噪声调度交互演示 */
+        .sched { margin: 20px 0; padding: 16px 18px; background: #fbfaff; border: 1px solid #ddd6fe; border-radius: 16px; }
+        .sched h3 { margin: 0 0 6px; font-size: 1.05rem; color: #4c1d95; }
+        .sched-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+        .sched-controls label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: #5b21b6; }
+        .sched-controls select, .sched-controls input[type="range"], .sched-controls button { font: inherit; max-width: 100%; }
+        .sched-controls button { padding: 7px 16px; border: 2px solid #7c3aed; border-radius: 40px; background: #fff; color: #5b21b6; font-weight: 600; cursor: pointer; }
+        .sched-controls button:hover { background: #ede9fe; }
+        .sched-chart { width: 100%; height: auto; display: block; background: #fff; border-radius: 10px; }
+        .sched-out { display: block; margin: 10px 0 0; padding: 10px 12px; background: #ede9fe; border-left: 5px solid #7c3aed; border-radius: 0 10px 10px 0; line-height: 1.7; color: #1e293b; }
+        .sched-out b { color: #5b21b6; }
+        @media print { .sched { break-inside: avoid; } }
     </style>
 
 </head>
@@ -304,6 +316,37 @@
             <tr><td>平方根调度（Sqrt）</td><td>β_t ∝ 1/√t</td><td>噪声增长逐渐减缓</td><td>少数实验场景</td></tr>
         </table></div>
 
+        <section class="sched" aria-labelledby="sched8-title">
+            <h3 id="sched8-title">交互演示：噪声调度把信号保留到哪一步？</h3>
+            <p>选择调度方案并拖动步数 t，读取 <math class="math-inline" aria-label="alpha bar t"><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></math>（信号保留系数，即 <math class="math-inline" aria-label="x t"><msub><mi>x</mi><mi>t</mi></msub></math> 中 <math class="math-inline" aria-label="x 0"><msub><mi>x</mi><mn>0</mn></msub></math> 的系数）。曲线按 T=1000 逐步累乘计算：线性调度 β_t 由 0.0001 线性增至 0.02（DDPM）；余弦调度 <math class="math-inline" aria-label="alpha bar t 等于 cos 平方"><msub><mover><mi>α</mi><mo>¯</mo></mover><mi>t</mi></msub></math>=cos²((t/T+s)/(1+s)·π/2)/cos²(s/(1+s)·π/2)，s=0.008（Improved DDPM）。</p>
+            <div class="sched-controls">
+                <label>调度方案
+                    <select data-sched="sch">
+                        <option value="linear" selected>线性 Linear（DDPM）</option>
+                        <option value="cosine">余弦 Cosine（Improved DDPM）</option>
+                    </select>
+                </label>
+                <label>步数 t：<output data-sched="tval">500</output>
+                    <input type="range" data-sched="t" min="1" max="1000" value="500" step="1">
+                </label>
+                <button type="button" data-sched="toggle">切换线性 / 余弦</button>
+            </div>
+            <svg class="sched-chart" viewBox="0 0 640 260" role="img" aria-labelledby="sched8-svg-title">
+                <title id="sched8-svg-title">两种噪声调度下信号保留系数 ᾱ_t 随步数 t 变化的曲线</title>
+                <line x1="60" y1="20" x2="60" y2="210" stroke="#94a3b8" stroke-width="1.5"/>
+                <line x1="60" y1="210" x2="610" y2="210" stroke="#94a3b8" stroke-width="1.5"/>
+                <text x="52" y="24" font-size="12" fill="#64748b" text-anchor="end">1.0</text>
+                <text x="52" y="214" font-size="12" fill="#64748b" text-anchor="end">0.0</text>
+                <text x="606" y="230" font-size="12" fill="#64748b" text-anchor="end">t=1000</text>
+                <text x="300" y="20" font-size="12" fill="#7c3aed">— 线性</text>
+                <text x="380" y="20" font-size="12" fill="#0ea5e9">— 余弦</text>
+                <line data-sched="marker" x1="335" y1="20" x2="335" y2="210" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4"/>
+                <polyline data-sched="lin" fill="none" stroke="#7c3aed" stroke-width="2.5" points=""/>
+                <polyline data-sched="cos" fill="none" stroke="#0ea5e9" stroke-width="2.5" points=""/>
+            </svg>
+            <p class="sched-out" data-sched="out" aria-live="polite"></p>
+        </section>
+
         <p>线性调度的问题是：在 T=1000 步时，后面的步骤中图像已经几乎全是噪声，继续加噪声信息被破坏得很严重。余弦调度在后期保持一定的信号强度，允许模型在去噪时利用更多信息，因此生成质量通常更好。</p>
 
         <div class="tip">
@@ -349,5 +392,50 @@
     </main>
 </div>
 </div>
+<script>
+(function () {
+    var box = document.querySelector('.sched');
+    if (!box) return;
+    var q = function (n) { return box.querySelector('[data-sched="' + n + '"]'); };
+    var T = 1000, S = 0.008;
+    function betaLinear(t) { return 1e-4 + (0.02 - 1e-4) * (t - 1) / (T - 1); }
+    function abarLinear(t) { var p = 1; for (var i = 1; i <= t; i++) p *= (1 - betaLinear(i)); return p; }
+    function abarCos(t) {
+        var f = function (u) { return Math.pow(Math.cos((u / T + S) / (1 + S) * Math.PI / 2), 2); };
+        return f(t) / f(0);
+    }
+    var cache = {};
+    function series(key) {
+        if (cache[key]) return cache[key];
+        var pts = [];
+        for (var i = 0; i <= T; i += 5) {
+            var a = key === 'linear' ? abarLinear(i) : abarCos(i);
+            pts.push((60 + 550 * i / T).toFixed(1) + ',' + (210 - 190 * a).toFixed(1));
+        }
+        return (cache[key] = pts.join(' '));
+    }
+    function val(key, t) { return key === 'linear' ? abarLinear(t) : abarCos(t); }
+    var NAME = { linear: '线性 Linear（DDPM）', cosine: '余弦 Cosine（Improved DDPM）' };
+    function render() {
+        var key = q('sch').value, t = parseInt(q('t').value, 10);
+        q('tval').textContent = t;
+        var x = 60 + 550 * t / T;
+        q('marker').setAttribute('x1', x); q('marker').setAttribute('x2', x);
+        q('lin').setAttribute('points', series('linear'));
+        q('cos').setAttribute('points', series('cosine'));
+        var a = val(key, t);
+        q('out').innerHTML = '<b>' + NAME[key] + '</b>　t = ' + t
+            + '　√ᾱ_t（信号系数）= <b>' + Math.sqrt(a).toFixed(3) + '</b>　ᾱ_t = <b>' + a.toFixed(4) + '</b><br>'
+            + '由 x_t = √ᾱ_t·x_0 + √(1−ᾱ_t)·ε，信号系数越大表示这一步仍保留越多原始信息。两条曲线均按 β 序列逐步累乘得到，无拟合参数。';
+    }
+    box.querySelectorAll('select[data-sched], input[data-sched], button[data-sched]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'BUTTON' ? 'click' : 'input', function () {
+            if (el.tagName === 'BUTTON') q('sch').value = q('sch').value === 'linear' ? 'cosine' : 'linear';
+            render();
+        });
+    });
+    render();
+})();
+</script>
 </body>
 </html>
